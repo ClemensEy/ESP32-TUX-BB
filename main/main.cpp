@@ -64,10 +64,10 @@ static void update_temp_ui()
     //if (!lv_obj_is_valid(lbl_time)) return;
 
     // date/time format reference => https://cplusplus.com/reference/ctime/strftime/
-    // time_t now;
-    // struct tm datetimeinfo;
-    // time(&now);
-    // localtime_r(&now, &datetimeinfo);
+    time_t now;
+    struct tm datetimeinfo;
+    time(&now);
+    localtime_r(&now, &datetimeinfo);
 
     // // tm_year will be (1970 - 1900) = 70, if not set
     // if (datetimeinfo.tm_year < 100) // Time travel not supported :P
@@ -89,13 +89,19 @@ static void update_temp_ui()
     //lv_msg_send(MSG_TIME_CHANGED, &datetimeinfo);
     //ESP_LOGI(TAG, "Read temperature");
     float tsens_value;
-    string tsens_string;
-        ESP_ERROR_CHECK(temperature_sensor_get_celsius(temp_sensor, &tsens_value));
-        ESP_LOGI(TAG, "Temperature value %.02f ℃", tsens_value);
-        //vTaskDelay(pdMS_TO_TICKS(1000));
-    tsens_string = std::to_string(tsens_value);
-    //ESP_LOGI(TAG, tsens_string);
+    //string tsens_string;
+    ESP_ERROR_CHECK(temperature_sensor_get_celsius(temp_sensor, &tsens_value));
+    
+    ESP_LOGI(TAG, "Temperature value %.02f ℃", tsens_value);
+    // Store the current reading in the buffer
+    sensorBuffer[bufferIndex].timestamp = datetimeinfo;
+    sensorBuffer[bufferIndex].db_value = tsens_value;
+    // for (int i = 0;i<bufferIndex;i++) {
+    //     ESP_LOGI(TAG, "db %.02f ",  sensorBuffer[i].db_value);
 
+    // }
+    // Increment the buffer index and handle wraparound
+    bufferIndex = (bufferIndex + 1) % bufferSize;
     lv_msg_send(MSG_TEMP_UPDATE, &tsens_value);
     
 }
@@ -336,6 +342,11 @@ extern "C" void app_main(void)
     // LV_FS integration & print readme.txt from the root for testing
     lv_print_readme_txt("F:/readme.txt");   // SPIFF / FAT
     lv_print_readme_txt("S:/readme.txt");   // SDCARD
+
+    //db stuff
+    bufferIndex = 0;
+
+
 
 /* Push LVGL/UI to its own UI task later*/
     // Splash screen
