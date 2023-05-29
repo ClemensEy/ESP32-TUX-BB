@@ -53,7 +53,11 @@ extern "C" {
 #define MSG_DEVICE_INFO         60
 
 #define MSG_TIME_CHANGED        100
+
 #define MSG_WEATHER_CHANGED     101
+
+#define MSG_TEMP_UPDATE        102
+
 
 #ifdef __cplusplus
 }

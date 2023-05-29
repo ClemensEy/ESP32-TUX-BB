@@ -100,6 +100,7 @@ static lv_obj_t *lbl_date;
 /* Weather */
 static lv_obj_t *lbl_weathericon;
 static lv_obj_t *lbl_temp;
+static lv_obj_t *lbl_temp2;
 static lv_obj_t *lbl_hl;
 
 static lv_obj_t *stopwatch;
@@ -185,6 +186,7 @@ static void footer_button_event_handler(lv_event_t *e);
 /* MSG Events */
 void datetime_event_cb(lv_event_t * e);
 void weather_event_cb(lv_event_t * e);
+void temp_event_cb(lv_event_t * e);
 void stopwatch_cb(lv_event_t * e);
 
 static void status_change_cb(void * s, lv_msg_t *m);
@@ -444,7 +446,7 @@ static void tux_panel_clock_weather(lv_obj_t *parent)
     lv_obj_add_event_cb(cont_datetime, datetime_event_cb, LV_EVENT_MSG_RECEIVED, NULL);
     // Subscribe the date and time panel to the MSG_TIME_CHANGED message.
     lv_msg_subsribe_obj(MSG_TIME_CHANGED, cont_datetime, NULL);
-    // Time
+    
 
     // Create a new label for the time.
     lbl_time = lv_label_create(cont_datetime);
@@ -556,7 +558,7 @@ static void tux_panel_clock_weather2(lv_obj_t *parent)
 
     // MSG - MSG_TIME_CHANGED - EVENT
     lv_obj_add_event_cb(cont_db, stopwatch_cb, LV_EVENT_CLICKED, NULL);
-    lv_msg_subsribe_obj(MSG_TIME_CHANGED, cont_db, NULL);
+    //lv_msg_subsribe_obj(MSG_TIME_CHANGED, cont_db, NULL);
 
     // Time
     lbl_time2 = lv_label_create(cont_db);
@@ -577,39 +579,41 @@ static void tux_panel_clock_weather2(lv_obj_t *parent)
     // lv_label_set_text(lbl_date, "waiting for update");
 
     // ************ Weather panel (panel widen with weekly forecast in landscape)
-    lv_obj_t *cont_weather = lv_obj_create(cont_panel);
-    lv_obj_set_size(cont_weather,100,115);
-    lv_obj_set_flex_flow(cont_weather, LV_FLEX_FLOW_ROW_WRAP);
-    lv_obj_set_flex_align(cont_weather, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
-    lv_obj_set_scrollbar_mode(cont_weather, LV_SCROLLBAR_MODE_OFF);
-    lv_obj_align_to(cont_weather,cont_db,LV_ALIGN_OUT_RIGHT_MID,0,0);
-    lv_obj_set_style_bg_opa(cont_weather,LV_OPA_TRANSP,0);
-    lv_obj_set_style_border_opa(cont_weather,LV_OPA_TRANSP,0);
+    lv_obj_t *cont_temp = lv_obj_create(cont_panel);
+    lv_obj_set_size(cont_temp,100,115);
+    lv_obj_set_flex_flow(cont_temp, LV_FLEX_FLOW_ROW_WRAP);
+    lv_obj_set_flex_align(cont_temp, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+    lv_obj_set_scrollbar_mode(cont_temp, LV_SCROLLBAR_MODE_OFF);
+    lv_obj_align_to(cont_temp,cont_db,LV_ALIGN_OUT_RIGHT_MID,0,0);
+    lv_obj_set_style_bg_opa(cont_temp,LV_OPA_TRANSP,0);
+    lv_obj_set_style_border_opa(cont_temp,LV_OPA_TRANSP,0);
+    lv_obj_add_event_cb(cont_temp, temp_event_cb, LV_EVENT_MSG_RECEIVED, NULL);
+    lv_msg_subsribe_obj(MSG_TEMP_UPDATE, cont_temp, NULL); 
 
     // // MSG - MSG_WEATHER_CHANGED - EVENT
-    // lv_obj_add_event_cb(cont_weather, weather_event_cb, LV_EVENT_MSG_RECEIVED, NULL);
-    // lv_msg_subsribe_obj(MSG_WEATHER_CHANGED, cont_weather, NULL);
+    // lv_obj_add_event_cb(cont_temp, weather_event_cb, LV_EVENT_MSG_RECEIVED, NULL);
+    // lv_msg_subsribe_obj(MSG_WEATHER_CHANGED, cont_temp, NULL);
 
     // This only for landscape
-    // lv_obj_t *lbl_unit = lv_label_create(cont_weather);
+    // lv_obj_t *lbl_unit = lv_label_create(cont_temp);
     // lv_obj_set_style_text_font(lbl_unit, font_normal, 0);
     // lv_label_set_text(lbl_unit, "Light rain");
 
     // // Weather icons
-    // lbl_weathericon = lv_label_create(cont_weather);
+    // lbl_weathericon = lv_label_create(cont_temp);
     // lv_obj_set_style_text_font(lbl_weathericon, &font_fa_weather_42, 0);
     // // "F:/weather/cloud-sun-rain.bin");//10d@2x.bin"
     // lv_label_set_text(lbl_weathericon, FA_WEATHER_SUN);
     // lv_obj_set_style_text_color(lbl_weathericon,lv_palette_main(LV_PALETTE_ORANGE),0);
 
     // Temperature
-    lbl_temp = lv_label_create(cont_weather);
+    lbl_temp2 = lv_label_create(cont_temp);
     //lv_obj_set_style_text_font(lbl_temp, &lv_font_montserrat_32, 0);
-    lv_obj_set_style_text_font(lbl_temp, font_xl, 0);
-    lv_obj_set_style_align(lbl_temp, LV_ALIGN_BOTTOM_MID, 0);
-    lv_label_set_text(lbl_temp, "0°C");
+    lv_obj_set_style_text_font(lbl_temp2, font_xl, 0);
+    lv_obj_set_style_align(lbl_temp2, LV_ALIGN_BOTTOM_MID, 0);
+    lv_label_set_text(lbl_temp2, "0°C");
 
-    // lbl_hl = lv_label_create(cont_weather);
+    // lbl_hl = lv_label_create(cont_temp);
     // lv_obj_set_style_text_font(lbl_hl, font_normal, 0);
     // lv_obj_set_style_align(lbl_hl, LV_ALIGN_BOTTOM_MID, 0);
     // lv_label_set_text(lbl_hl, "H:0° L:0°");
@@ -1157,6 +1161,35 @@ void weather_event_cb(lv_event_t * e)
 
         lv_label_set_text(lbl_temp,fmt::format("{:.1f}°{}",e_owm->Temperature,e_owm->TemperatureUnit).c_str());
         lv_label_set_text(lbl_hl,fmt::format("H:{:.1f}° L:{:.1f}°",e_owm->TemperatureHigh,e_owm->TemperatureLow).c_str());
+    }
+}
+
+void temp_event_cb(lv_event_t * e)
+{
+    lv_event_code_t code = lv_event_get_code(e);
+    lv_msg_t * m = lv_event_get_msg(e);
+           //float temp_chip ;
+        //string str_temp_chip;
+        //str_temp_chip = (const char*)lv_msg_get_payload(m);
+        //str_temp_chip = str(temp_chip);
+        //ESP_LOGW(TAG,str_temp_chip);
+        //char temp_chip[20]={0};
+        //string str_temp_chip;
+        // IP address in the payload so display
+        //snprintf(temp_chip,sizeof(temp_chip),"%f",(const char*)lv_msg_get_payload(m));
+        //lv_label_set_text_fmt(lbl_wifi_status, "IP Address: %s",ip_data);
+        //str_temp_chip = temp_chip;
+        
+        
+        //ESP_LOGW(TAG,"jdij");
+    // Not necessary but if event target was button or so, then required
+    if (code == LV_EVENT_MSG_RECEIVED)  
+    {
+        float tsens_value = *((float*)lv_msg_get_payload(m));
+        char temp_chip[20];
+        snprintf(temp_chip, sizeof(temp_chip), "%f", tsens_value);
+        lv_label_set_text(lbl_temp2,temp_chip);
+       // lv_label_set_text(lbl_hl,fmt::format("H:{:.1f}° L:{:.1f}°",e_owm->TemperatureHigh,e_owm->TemperatureLow).c_str());
     }
 }
 

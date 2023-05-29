@@ -24,6 +24,8 @@ SOFTWARE.
 
 static const char *TAG = "ESP32-TUX";
 #include "main.hpp"
+#include <iostream>
+#include <string>
 
 static void set_timezone()
 {
@@ -73,7 +75,7 @@ static void update_temp_ui()
     //     // ESP_LOGD(TAG, "Date/time not set yet [%d]",datetimeinfo.tm_year);    
     //     return;
     // }
-     ESP_LOGW(TAG,"TEMP_TIMER_2222222222");
+    // ESP_LOGW(TAG,"TEMP_TIMER_2222222222");
     //  ESP_LOGI(TAG, "Read temperature");
     // int cnt = 20;
     // float tsens_value;
@@ -85,12 +87,16 @@ static void update_temp_ui()
 
     // Send update time to UI with payload using lv_msg
     //lv_msg_send(MSG_TIME_CHANGED, &datetimeinfo);
-    ESP_LOGI(TAG, "Read temperature");
+    //ESP_LOGI(TAG, "Read temperature");
     float tsens_value;
+    string tsens_string;
         ESP_ERROR_CHECK(temperature_sensor_get_celsius(temp_sensor, &tsens_value));
         ESP_LOGI(TAG, "Temperature value %.02f ℃", tsens_value);
         //vTaskDelay(pdMS_TO_TICKS(1000));
-    
+    tsens_string = std::to_string(tsens_value);
+    //ESP_LOGI(TAG, tsens_string);
+
+    lv_msg_send(MSG_TEMP_UPDATE, &tsens_value);
     
 }
 
