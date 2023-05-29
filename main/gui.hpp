@@ -1187,8 +1187,12 @@ void temp_event_cb(lv_event_t * e)
     {
         float tsens_value = *((float*)lv_msg_get_payload(m));
         char temp_chip[20];
-        snprintf(temp_chip, sizeof(temp_chip), "%f", tsens_value);
-        lv_label_set_text(lbl_temp2,temp_chip);
+        //char t_einheit[1] ;
+        //t_einheit[0] = 'C';
+       // snprintf(temp_chip, sizeof(temp_chip), "%f", tsens_value);
+        //lv_label_set_text(lbl_temp2,temp_chip);
+        lv_label_set_text(lbl_temp2,fmt::format("{:.1f}°C",tsens_value).c_str());
+
        // lv_label_set_text(lbl_hl,fmt::format("H:{:.1f}° L:{:.1f}°",e_owm->TemperatureHigh,e_owm->TemperatureLow).c_str());
     }
 }
