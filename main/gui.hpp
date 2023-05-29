@@ -110,6 +110,8 @@ static lv_obj_t *lbl_wifi_status;
 static lv_coord_t screen_h;
 static lv_coord_t screen_w;
 
+static lv_obj_t *ui_Chart2;
+
 /******************
  *  LVL STYLES
  ******************/
@@ -124,6 +126,7 @@ static lv_style_t style_ble;
 static lv_style_t style_battery;
 
 static lv_style_t style_ui_island;
+static lv_style_t lv_style_plain;
 
 static lv_style_t style_glow;
 
@@ -152,7 +155,7 @@ static void create_page_remote(lv_obj_t *parent);
 
 // Home page islands
 static void tux_panel_clock_weather(lv_obj_t *parent);
-static void tux_panel_clock_weather2(lv_obj_t *parent);
+static void tux_panel_db(lv_obj_t *parent);
 static void tux_panel_stop_clock(lv_obj_t *parent);
 static void tux_panel_config(lv_obj_t *parent);
 
@@ -194,6 +197,7 @@ static void lv_update_battery(uint batval);
 static void set_weather_icon(string weatherIcon);
 
 static int current_page = 0;
+lv_coord_t ui_Chart2_series_1_array[] = { 0,1,2,3,4,5,6,7,8,9};
 
 void lv_setup_styles()
 {
@@ -213,7 +217,8 @@ void lv_setup_styles()
     lv_style_set_radius(&style_content_bg, 0);
 
 // Enabling wallpaper image slows down scrolling perf etc...
-#if defined(CONFIG_WALLPAPER_IMAGE)
+//#if defined(CONFIG_WALLPAPER_IMAGE)
+#if defined(false)
     // Image Background
     // CF_INDEXED_8_BIT for smaller size - resolution 480x480
     // NOTE: Dynamic loading bg from SPIFF makes screen perf bad
@@ -536,88 +541,7 @@ void tux_panel_stop_clock(lv_obj_t *parent) {
   // Add the panel to the screen
   //tux_panel_add_to_screen(tux_stop_clock);
 }
-static void tux_panel_clock_weather2(lv_obj_t *parent)
-{
-    tux_db = tux_panel_create(parent, "", 130);
-    lv_obj_add_style(tux_db, &style_ui_island, 0);
 
-    lv_obj_t *cont_panel = tux_panel_get_content(tux_db);
-    lv_obj_set_flex_flow(tux_db, LV_FLEX_FLOW_ROW);
-    lv_obj_set_flex_align(tux_db, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
-
-    // // ************ Date/Time panel
-     lv_obj_t *cont_db = lv_obj_create(cont_panel);
-     lv_obj_set_size(cont_db,160,120);
-    lv_obj_set_flex_flow(cont_db, LV_FLEX_FLOW_ROW_WRAP);
-     lv_obj_set_scrollbar_mode(cont_db, LV_SCROLLBAR_MODE_OFF);
-     lv_obj_align(cont_db,LV_ALIGN_LEFT_MID,0,0);
-     lv_obj_set_style_bg_opa(cont_db,LV_OPA_TRANSP,0);
-     lv_obj_set_style_border_opa(cont_db,LV_OPA_TRANSP,0);
-     //lv_obj_set_style_pad_gap(cont_db,10,0);
-     lv_obj_set_style_pad_top(cont_db,20,0);
-
-    // MSG - MSG_TIME_CHANGED - EVENT
-    lv_obj_add_event_cb(cont_db, stopwatch_cb, LV_EVENT_CLICKED, NULL);
-    //lv_msg_subsribe_obj(MSG_TIME_CHANGED, cont_db, NULL);
-
-    // Time
-    lbl_time2 = lv_label_create(cont_db);
-    lv_obj_set_style_align(lbl_time2, LV_ALIGN_TOP_LEFT, 0);
-    lv_obj_set_style_text_font(lbl_time2, &font_7seg_56, 0);
-    lv_label_set_text(lbl_time2, "00:00");
-
-    // AM/PM
-    lbl_ampm = lv_label_create(cont_db);
-    lv_obj_set_style_align(lbl_ampm, LV_ALIGN_TOP_LEFT, 0);
-    lv_label_set_text(lbl_ampm, "db(A)");
-
-    // // Date
-    // lbl_date = lv_label_create(cont_datetime);
-    // lv_obj_set_style_align(lbl_date, LV_ALIGN_BOTTOM_MID, 0);
-    // lv_obj_set_style_text_font(lbl_date, font_large, 0);
-    // lv_obj_set_height(lbl_date,30);
-    // lv_label_set_text(lbl_date, "waiting for update");
-
-    // ************ Weather panel (panel widen with weekly forecast in landscape)
-    lv_obj_t *cont_temp = lv_obj_create(cont_panel);
-    lv_obj_set_size(cont_temp,100,115);
-    lv_obj_set_flex_flow(cont_temp, LV_FLEX_FLOW_ROW_WRAP);
-    lv_obj_set_flex_align(cont_temp, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
-    lv_obj_set_scrollbar_mode(cont_temp, LV_SCROLLBAR_MODE_OFF);
-    lv_obj_align_to(cont_temp,cont_db,LV_ALIGN_OUT_RIGHT_MID,0,0);
-    lv_obj_set_style_bg_opa(cont_temp,LV_OPA_TRANSP,0);
-    lv_obj_set_style_border_opa(cont_temp,LV_OPA_TRANSP,0);
-    lv_obj_add_event_cb(cont_temp, temp_event_cb, LV_EVENT_MSG_RECEIVED, NULL);
-    lv_msg_subsribe_obj(MSG_TEMP_UPDATE, cont_temp, NULL); 
-
-    // // MSG - MSG_WEATHER_CHANGED - EVENT
-    // lv_obj_add_event_cb(cont_temp, weather_event_cb, LV_EVENT_MSG_RECEIVED, NULL);
-    // lv_msg_subsribe_obj(MSG_WEATHER_CHANGED, cont_temp, NULL);
-
-    // This only for landscape
-    // lv_obj_t *lbl_unit = lv_label_create(cont_temp);
-    // lv_obj_set_style_text_font(lbl_unit, font_normal, 0);
-    // lv_label_set_text(lbl_unit, "Light rain");
-
-    // // Weather icons
-    // lbl_weathericon = lv_label_create(cont_temp);
-    // lv_obj_set_style_text_font(lbl_weathericon, &font_fa_weather_42, 0);
-    // // "F:/weather/cloud-sun-rain.bin");//10d@2x.bin"
-    // lv_label_set_text(lbl_weathericon, FA_WEATHER_SUN);
-    // lv_obj_set_style_text_color(lbl_weathericon,lv_palette_main(LV_PALETTE_ORANGE),0);
-
-    // Temperature
-    lbl_temp2 = lv_label_create(cont_temp);
-    //lv_obj_set_style_text_font(lbl_temp, &lv_font_montserrat_32, 0);
-    lv_obj_set_style_text_font(lbl_temp2, font_xl, 0);
-    lv_obj_set_style_align(lbl_temp2, LV_ALIGN_BOTTOM_MID, 0);
-    lv_label_set_text(lbl_temp2, "0°C");
-
-    // lbl_hl = lv_label_create(cont_temp);
-    // lv_obj_set_style_text_font(lbl_hl, font_normal, 0);
-    // lv_obj_set_style_align(lbl_hl, LV_ALIGN_BOTTOM_MID, 0);
-    // lv_label_set_text(lbl_hl, "H:0° L:0°");
-}
 
 
 
@@ -831,9 +755,31 @@ static void create_page_home(lv_obj_t *parent)
 {
     /* HOME PAGE PANELS */
     //tux_panel_stop_clock(parent);
-    tux_panel_clock_weather2(parent);
+    //tux_panel_db(parent);
     //tux_panel_clock_weather(parent);
     //tux_panel_devinfo(parent);  
+
+}
+static void create_page_chart(lv_obj_t *parent)
+{
+ 
+    ui_Chart2 = lv_chart_create(parent);
+    lv_obj_set_width( ui_Chart2, 475);
+    lv_obj_set_height( ui_Chart2, 270);
+    lv_obj_set_align( ui_Chart2, LV_ALIGN_CENTER );
+    lv_chart_set_type( ui_Chart2, LV_CHART_TYPE_LINE);
+    lv_chart_set_point_count( ui_Chart2, 60);
+    lv_chart_set_div_line_count( ui_Chart2, 0, 20);
+    lv_chart_set_axis_tick( ui_Chart2, LV_CHART_AXIS_PRIMARY_X, 10, 5, 0, 0, false, 50);
+    lv_chart_set_axis_tick( ui_Chart2, LV_CHART_AXIS_PRIMARY_Y, 0, 5, 0, 0, false, 50);
+    lv_chart_set_axis_tick( ui_Chart2, LV_CHART_AXIS_SECONDARY_Y, 10, 5, 0, 0, false, 25);
+    lv_chart_series_t* ui_Chart2_series_1 = lv_chart_add_series(ui_Chart2, lv_color_hex(0x808080), LV_CHART_AXIS_PRIMARY_Y);
+    //static lv_coord_t ui_Chart2_series_1_array[] = { 0,10,20,20,20,20,20,20,20,0 };
+    lv_chart_set_ext_y_array(ui_Chart2, ui_Chart2_series_1, ui_Chart2_series_1_array);
+    //get data
+    lv_obj_add_event_cb(parent, temp_event_cb, LV_EVENT_MSG_RECEIVED, NULL);
+    lv_msg_subsribe_obj(MSG_TEMP_UPDATE, parent, NULL); 
+
 }
 
 static void create_page_settings(lv_obj_t *parent)
@@ -874,7 +820,7 @@ static void show_ui()
     lv_obj_set_scrollbar_mode(screen_container, LV_SCROLLBAR_MODE_OFF);
 
     // Gradient / Image Background for screen container
-    lv_obj_add_style(screen_container, &style_content_bg, 0);
+    //lv_obj_add_style(screen_container, &style_content_bg, 0);
 
     // HEADER & FOOTER
     create_header(screen_container);
@@ -887,10 +833,11 @@ static void show_ui()
     lv_obj_set_style_border_width(content_container, 0, 0);
     lv_obj_set_style_bg_opa(content_container, LV_OPA_TRANSP, 0);
 
-    lv_obj_set_flex_flow(content_container, LV_FLEX_FLOW_COLUMN);
+    //lv_obj_set_flex_flow(content_container, LV_FLEX_FLOW_COLUMN);
 
     // Show Home Page
-    create_page_home(content_container);
+    //create_page_home(content_container);
+    create_page_chart(content_container);
     //create_page_settings(content_container);
     //create_page_remote(content_container);
 
@@ -1168,32 +1115,20 @@ void temp_event_cb(lv_event_t * e)
 {
     lv_event_code_t code = lv_event_get_code(e);
     lv_msg_t * m = lv_event_get_msg(e);
-           //float temp_chip ;
-        //string str_temp_chip;
-        //str_temp_chip = (const char*)lv_msg_get_payload(m);
-        //str_temp_chip = str(temp_chip);
-        //ESP_LOGW(TAG,str_temp_chip);
-        //char temp_chip[20]={0};
-        //string str_temp_chip;
-        // IP address in the payload so display
-        //snprintf(temp_chip,sizeof(temp_chip),"%f",(const char*)lv_msg_get_payload(m));
-        //lv_label_set_text_fmt(lbl_wifi_status, "IP Address: %s",ip_data);
-        //str_temp_chip = temp_chip;
-        
-        
-        //ESP_LOGW(TAG,"jdij");
+
+        ESP_LOGW(TAG,"jdij");
     // Not necessary but if event target was button or so, then required
     if (code == LV_EVENT_MSG_RECEIVED)  
     {
         float tsens_value = *((float*)lv_msg_get_payload(m));
         char temp_chip[20];
-        //char t_einheit[1] ;
-        //t_einheit[0] = 'C';
-       // snprintf(temp_chip, sizeof(temp_chip), "%f", tsens_value);
-        //lv_label_set_text(lbl_temp2,temp_chip);
-        lv_label_set_text(lbl_temp2,fmt::format("{:.1f}°C",tsens_value).c_str());
+        //lv_label_set_text(lbl_temp2,fmt::format("{:.1f}°C",tsens_value).c_str());
+        ui_Chart2_series_1_array[0] = ((static_cast<lv_coord_t>(tsens_value))-39)*10;
+        lv_obj_invalidate(ui_Chart2);
 
-       // lv_label_set_text(lbl_hl,fmt::format("H:{:.1f}° L:{:.1f}°",e_owm->TemperatureHigh,e_owm->TemperatureLow).c_str());
+        lv_task_handler();
+
+
     }
 }
 
