@@ -40,6 +40,8 @@ SOFTWARE.
 #include <fmt/core.h>
 #include <fmt/format.h>
 
+#include "driver/temperature_sensor.h"
+
 using namespace std ;
 #include "soc/rtc.h"
 //#include "esp_ota_ops.h"
@@ -100,8 +102,12 @@ ESP_EVENT_DEFINE_BASE(TUX_EVENTS);
 
 SettingsConfig *cfg;
 OpenWeatherMap *owm;
+temperature_sensor_handle_t temp_sensor;
+//temperature_sensor_handle_t temp_sensor = NULL;
+temperature_sensor_config_t temp_sensor_config;
 
 static void timer_datetime_callback(lv_timer_t * timer);
+static void timer_temp_callback(lv_timer_t * timer);
 static void timer_weather_callback(lv_timer_t * timer);
 static void lv_update_battery(uint batval);
 static void tux_ui_change_cb(void * s, lv_msg_t *m);
@@ -116,6 +122,7 @@ static bool is_dark_theme = true;
 static int battery_value = 0;
 
 static lv_timer_t * timer_datetime;
+static lv_timer_t * timer_temp;
 static lv_timer_t * timer_weather;
 
 // Take your pick, here is the complete timezone list :)

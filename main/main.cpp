@@ -55,6 +55,44 @@ static void update_datetime_ui()
     // Send update time to UI with payload using lv_msg
     lv_msg_send(MSG_TIME_CHANGED, &datetimeinfo);
 }
+// GEt time from internal RTC and update date/time of the clock
+static void update_temp_ui()
+{
+    // If we are on another screen where lbl_time is not valid
+    //if (!lv_obj_is_valid(lbl_time)) return;
+
+    // date/time format reference => https://cplusplus.com/reference/ctime/strftime/
+    // time_t now;
+    // struct tm datetimeinfo;
+    // time(&now);
+    // localtime_r(&now, &datetimeinfo);
+
+    // // tm_year will be (1970 - 1900) = 70, if not set
+    // if (datetimeinfo.tm_year < 100) // Time travel not supported :P
+    // {
+    //     // ESP_LOGD(TAG, "Date/time not set yet [%d]",datetimeinfo.tm_year);    
+    //     return;
+    // }
+     ESP_LOGW(TAG,"TEMP_TIMER_2222222222");
+    //  ESP_LOGI(TAG, "Read temperature");
+    // int cnt = 20;
+    // float tsens_value;
+    // while (cnt--) {
+    //     temperature_sensor_get_celsius(temp_sensor, &tsens_value);
+    //     ESP_LOGI(TAG, "Temperature value %.02f ℃", tsens_value);
+    //     vTaskDelay(pdMS_TO_TICKS(1000));
+    // }
+
+    // Send update time to UI with payload using lv_msg
+    //lv_msg_send(MSG_TIME_CHANGED, &datetimeinfo);
+    ESP_LOGI(TAG, "Read temperature");
+    float tsens_value;
+        ESP_ERROR_CHECK(temperature_sensor_get_celsius(temp_sensor, &tsens_value));
+        ESP_LOGI(TAG, "Temperature value %.02f ℃", tsens_value);
+        //vTaskDelay(pdMS_TO_TICKS(1000));
+    
+    
+}
 
 static const char* get_id_string(esp_event_base_t base, int32_t id) {
     //if (base == TUX_EVENTS) {
@@ -100,6 +138,7 @@ static void tux_event_handler(void* arg, esp_event_base_t event_base,
 
         // Enable timer after the date/time is set.
         lv_timer_ready(timer_weather); 
+        //lv_timer_ready(timer_temp); 
 
     } else if (event_id == TUX_EVENT_OTA_STARTED) {
         // OTA Started
@@ -303,6 +342,9 @@ extern "C" void app_main(void)
     lv_setup_styles();    
     show_ui();
     lvgl_release();
+
+    
+
 /* Push these to its own UI task later*/
 
 #ifdef SD_SUPPORTED
@@ -320,6 +362,9 @@ extern "C" void app_main(void)
 
     // Date/Time update timer - once per sec
     timer_datetime = lv_timer_create(timer_datetime_callback, 1000,  NULL);
+    timer_temp = lv_timer_create(timer_temp_callback, 1000,  NULL);
+    //start temp timer
+   // lv_timer_ready(timer_temp);   // start timer
     //lv_timer_pause(timer_datetime); // enable only when wifi is connected
 
     // Weather update timer - Once per min (60*1000) or maybe once in 10 mins (10*60*1000)
@@ -335,6 +380,21 @@ extern "C" void app_main(void)
     lv_msg_subsribe(MSG_PAGE_SETTINGS, tux_ui_change_cb, NULL);
     lv_msg_subsribe(MSG_PAGE_OTA, tux_ui_change_cb, NULL);
     lv_msg_subsribe(MSG_OTA_INITIATE, tux_ui_change_cb, NULL);    // Initiate OTA
+    // TEMP     SENSOR
+    ESP_LOGI(TAG, "Install temperature sensor, expected temp ranger range: 10~50 ℃");
+    temp_sensor_config = TEMPERATURE_SENSOR_CONFIG_DEFAULT(10, 50);
+    ESP_ERROR_CHECK(temperature_sensor_install(&temp_sensor_config, &temp_sensor));
+
+    ESP_LOGI(TAG, "Enable temperature sensor");
+    ESP_ERROR_CHECK(temperature_sensor_enable(temp_sensor));
+    ESP_LOGI(TAG, "Read temperature");
+    float tsens_value;
+    
+        ESP_ERROR_CHECK(temperature_sensor_get_celsius(temp_sensor, &tsens_value));
+        ESP_LOGI(TAG, "Temperature value %.02f ℃", tsens_value);
+        //vTaskDelay(pdMS_TO_TICKS(1000));
+    
+    
 }
 
 static void timer_datetime_callback(lv_timer_t * timer)
@@ -345,6 +405,16 @@ static void timer_datetime_callback(lv_timer_t * timer)
     
     lv_msg_send(MSG_BATTERY_STATUS,&battery_value);
     update_datetime_ui();
+}
+
+static void timer_temp_callback(lv_timer_t * timer)
+{
+   
+    //lv_msg_send(MSG_BATTERY_STATUS,&battery_value);
+    // ESP_LOGW(TAG,"TEMP-TIMER-------------xXXXXXxxxx");
+    update_temp_ui();
+    
+
 }
 
 static void timer_weather_callback(lv_timer_t * timer)

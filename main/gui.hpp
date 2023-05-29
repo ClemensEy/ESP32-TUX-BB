@@ -71,7 +71,8 @@ static lv_obj_t *qr_status_container;
 
 // TUX Panels
 static lv_obj_t *tux_clock_weather;
-
+static lv_obj_t *tux_db;
+static lv_obj_t *tux_stop_clock;
 static lv_obj_t *island_wifi;
 static lv_obj_t *island_ota;
 static lv_obj_t *island_devinfo;
@@ -92,6 +93,7 @@ static lv_obj_t *icon_battery;
 
 /* Date/Time */
 static lv_obj_t *lbl_time;
+static lv_obj_t *lbl_time2;
 static lv_obj_t *lbl_ampm;
 static lv_obj_t *lbl_date;
 
@@ -99,6 +101,8 @@ static lv_obj_t *lbl_date;
 static lv_obj_t *lbl_weathericon;
 static lv_obj_t *lbl_temp;
 static lv_obj_t *lbl_hl;
+
+static lv_obj_t *stopwatch;
 
 static lv_obj_t *lbl_wifi_status;
 
@@ -147,6 +151,8 @@ static void create_page_remote(lv_obj_t *parent);
 
 // Home page islands
 static void tux_panel_clock_weather(lv_obj_t *parent);
+static void tux_panel_clock_weather2(lv_obj_t *parent);
+static void tux_panel_stop_clock(lv_obj_t *parent);
 static void tux_panel_config(lv_obj_t *parent);
 
 // Setting page islands
@@ -179,6 +185,7 @@ static void footer_button_event_handler(lv_event_t *e);
 /* MSG Events */
 void datetime_event_cb(lv_event_t * e);
 void weather_event_cb(lv_event_t * e);
+void stopwatch_cb(lv_event_t * e);
 
 static void status_change_cb(void * s, lv_msg_t *m);
 static void lv_update_battery(uint batval);
@@ -407,47 +414,65 @@ static void create_footer(lv_obj_t *parent)
 
 static void tux_panel_clock_weather(lv_obj_t *parent)
 {
+    // Create a new panel.
     tux_clock_weather = tux_panel_create(parent, "", 130);
     lv_obj_add_style(tux_clock_weather, &style_ui_island, 0);
-
+    // Get the content of the panel.
     lv_obj_t *cont_panel = tux_panel_get_content(tux_clock_weather);
     lv_obj_set_flex_flow(tux_clock_weather, LV_FLEX_FLOW_ROW);
     lv_obj_set_flex_align(tux_clock_weather, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
-
     // ************ Date/Time panel
+
+    // Create a new panel for the date and time.
     lv_obj_t *cont_datetime = lv_obj_create(cont_panel);
-    lv_obj_set_size(cont_datetime,180,120);
+    // Set the size of the date and time panel.
+    lv_obj_set_size(cont_datetime, 180, 120);
+    // Set the flex flow of the date and time panel to row wrap.
     lv_obj_set_flex_flow(cont_datetime, LV_FLEX_FLOW_ROW_WRAP);
+    // Set the scrollbar mode of the date and time panel to off.
     lv_obj_set_scrollbar_mode(cont_datetime, LV_SCROLLBAR_MODE_OFF);
-    lv_obj_align(cont_datetime,LV_ALIGN_LEFT_MID,0,0);
+    // Align the date and time panel to the left and middle of the parent panel.
+    lv_obj_align(cont_datetime, LV_ALIGN_LEFT_MID,0,0);
+    // Set the background opacity of the date and time panel to transparent.
     lv_obj_set_style_bg_opa(cont_datetime,LV_OPA_TRANSP,0);
+    // Set the border opacity of the date and time panel to transparent.
     lv_obj_set_style_border_opa(cont_datetime,LV_OPA_TRANSP,0);
     //lv_obj_set_style_pad_gap(cont_datetime,10,0);
     lv_obj_set_style_pad_top(cont_datetime,20,0);
-
     // MSG - MSG_TIME_CHANGED - EVENT
+    // Create a new event callback for the date and time panel.
     lv_obj_add_event_cb(cont_datetime, datetime_event_cb, LV_EVENT_MSG_RECEIVED, NULL);
+    // Subscribe the date and time panel to the MSG_TIME_CHANGED message.
     lv_msg_subsribe_obj(MSG_TIME_CHANGED, cont_datetime, NULL);
-
     // Time
+
+    // Create a new label for the time.
     lbl_time = lv_label_create(cont_datetime);
+    // Set the alignment of the time label to top left.
     lv_obj_set_style_align(lbl_time, LV_ALIGN_TOP_LEFT, 0);
+    // Set the font of the time label to the 7seg_56 font.
     lv_obj_set_style_text_font(lbl_time, &font_7seg_56, 0);
+    // Set the text of the time label to "00:00".
     lv_label_set_text(lbl_time, "00:00");
-
-    // AM/PM
+    // Create a new label for the AM/PM.
     lbl_ampm = lv_label_create(cont_datetime);
+    // Set the alignment of the AM/PM label to top left.
     lv_obj_set_style_align(lbl_ampm, LV_ALIGN_TOP_LEFT, 0);
+    // Set the text of the AM/PM label to "AM".
     lv_label_set_text(lbl_ampm, "AM");
-
-    // Date
+    // Create a new label for the date.
     lbl_date = lv_label_create(cont_datetime);
+    // Set the alignment of the date label to bottom middle.
     lv_obj_set_style_align(lbl_date, LV_ALIGN_BOTTOM_MID, 0);
+    // Set the font of the date label to the large font.
     lv_obj_set_style_text_font(lbl_date, font_large, 0);
-    lv_obj_set_height(lbl_date,30);
+    // Set the height of the date label to 30 pixels.
+    lv_obj_set_height(lbl_date, 30);
+    // Set the text of the date label to "waiting for update".
     lv_label_set_text(lbl_date, "waiting for update");
-
     // ************ Weather panel (panel widen with weekly forecast in landscape)
+
+    // Create a new panel for the weather.
     lv_obj_t *cont_weather = lv_obj_create(cont_panel);
     lv_obj_set_size(cont_weather,100,115);
     lv_obj_set_flex_flow(cont_weather, LV_FLEX_FLOW_ROW_WRAP);
@@ -485,6 +510,112 @@ static void tux_panel_clock_weather(lv_obj_t *parent)
     lv_obj_set_style_align(lbl_hl, LV_ALIGN_BOTTOM_MID, 0);
     lv_label_set_text(lbl_hl, "H:0° L:0°");
 }
+void tux_panel_stop_clock(lv_obj_t *parent) {
+  // Create a new panel
+  tux_stop_clock = tux_panel_create(parent, "", 130);
+  lv_obj_add_style(tux_stop_clock, &style_ui_island, 0);
+
+   lv_obj_t *stopwatch_panel = tux_panel_get_content(tux_stop_clock);
+    lv_obj_set_flex_flow(tux_stop_clock, LV_FLEX_FLOW_ROW);
+    lv_obj_set_flex_align(tux_stop_clock, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+
+  // Set the panel's title
+  //tux_panel_set_title(panel, "Stop Clock");
+
+  // Add a stop clock to the panel
+  //lv_obj_t *stopwatch = lv_stopwatch_create(stopwatch_panel, NULL);
+// Add the stopwatch object to the stopwatch panel.
+ // lv_obj_add_to_parent(stopwatch, stopwatch_panel);
+  // Start the stopwatch.
+ // lv_stopwatch_start(stopwatch);
+  // Set the stop clock's properties
+  //tux_panel_stop_clock_set_format(stop_clock, "%H:%M:%S");
+
+  // Add the panel to the screen
+  //tux_panel_add_to_screen(tux_stop_clock);
+}
+static void tux_panel_clock_weather2(lv_obj_t *parent)
+{
+    tux_db = tux_panel_create(parent, "", 130);
+    lv_obj_add_style(tux_db, &style_ui_island, 0);
+
+    lv_obj_t *cont_panel = tux_panel_get_content(tux_db);
+    lv_obj_set_flex_flow(tux_db, LV_FLEX_FLOW_ROW);
+    lv_obj_set_flex_align(tux_db, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+
+    // // ************ Date/Time panel
+     lv_obj_t *cont_db = lv_obj_create(cont_panel);
+     lv_obj_set_size(cont_db,160,120);
+    lv_obj_set_flex_flow(cont_db, LV_FLEX_FLOW_ROW_WRAP);
+     lv_obj_set_scrollbar_mode(cont_db, LV_SCROLLBAR_MODE_OFF);
+     lv_obj_align(cont_db,LV_ALIGN_LEFT_MID,0,0);
+     lv_obj_set_style_bg_opa(cont_db,LV_OPA_TRANSP,0);
+     lv_obj_set_style_border_opa(cont_db,LV_OPA_TRANSP,0);
+     //lv_obj_set_style_pad_gap(cont_db,10,0);
+     lv_obj_set_style_pad_top(cont_db,20,0);
+
+    // MSG - MSG_TIME_CHANGED - EVENT
+    lv_obj_add_event_cb(cont_db, stopwatch_cb, LV_EVENT_CLICKED, NULL);
+    lv_msg_subsribe_obj(MSG_TIME_CHANGED, cont_db, NULL);
+
+    // Time
+    lbl_time2 = lv_label_create(cont_db);
+    lv_obj_set_style_align(lbl_time2, LV_ALIGN_TOP_LEFT, 0);
+    lv_obj_set_style_text_font(lbl_time2, &font_7seg_56, 0);
+    lv_label_set_text(lbl_time2, "00:00");
+
+    // AM/PM
+    lbl_ampm = lv_label_create(cont_db);
+    lv_obj_set_style_align(lbl_ampm, LV_ALIGN_TOP_LEFT, 0);
+    lv_label_set_text(lbl_ampm, "db(A)");
+
+    // // Date
+    // lbl_date = lv_label_create(cont_datetime);
+    // lv_obj_set_style_align(lbl_date, LV_ALIGN_BOTTOM_MID, 0);
+    // lv_obj_set_style_text_font(lbl_date, font_large, 0);
+    // lv_obj_set_height(lbl_date,30);
+    // lv_label_set_text(lbl_date, "waiting for update");
+
+    // ************ Weather panel (panel widen with weekly forecast in landscape)
+    lv_obj_t *cont_weather = lv_obj_create(cont_panel);
+    lv_obj_set_size(cont_weather,100,115);
+    lv_obj_set_flex_flow(cont_weather, LV_FLEX_FLOW_ROW_WRAP);
+    lv_obj_set_flex_align(cont_weather, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+    lv_obj_set_scrollbar_mode(cont_weather, LV_SCROLLBAR_MODE_OFF);
+    lv_obj_align_to(cont_weather,cont_db,LV_ALIGN_OUT_RIGHT_MID,0,0);
+    lv_obj_set_style_bg_opa(cont_weather,LV_OPA_TRANSP,0);
+    lv_obj_set_style_border_opa(cont_weather,LV_OPA_TRANSP,0);
+
+    // // MSG - MSG_WEATHER_CHANGED - EVENT
+    // lv_obj_add_event_cb(cont_weather, weather_event_cb, LV_EVENT_MSG_RECEIVED, NULL);
+    // lv_msg_subsribe_obj(MSG_WEATHER_CHANGED, cont_weather, NULL);
+
+    // This only for landscape
+    // lv_obj_t *lbl_unit = lv_label_create(cont_weather);
+    // lv_obj_set_style_text_font(lbl_unit, font_normal, 0);
+    // lv_label_set_text(lbl_unit, "Light rain");
+
+    // // Weather icons
+    // lbl_weathericon = lv_label_create(cont_weather);
+    // lv_obj_set_style_text_font(lbl_weathericon, &font_fa_weather_42, 0);
+    // // "F:/weather/cloud-sun-rain.bin");//10d@2x.bin"
+    // lv_label_set_text(lbl_weathericon, FA_WEATHER_SUN);
+    // lv_obj_set_style_text_color(lbl_weathericon,lv_palette_main(LV_PALETTE_ORANGE),0);
+
+    // Temperature
+    lbl_temp = lv_label_create(cont_weather);
+    //lv_obj_set_style_text_font(lbl_temp, &lv_font_montserrat_32, 0);
+    lv_obj_set_style_text_font(lbl_temp, font_xl, 0);
+    lv_obj_set_style_align(lbl_temp, LV_ALIGN_BOTTOM_MID, 0);
+    lv_label_set_text(lbl_temp, "0°C");
+
+    // lbl_hl = lv_label_create(cont_weather);
+    // lv_obj_set_style_text_font(lbl_hl, font_normal, 0);
+    // lv_obj_set_style_align(lbl_hl, LV_ALIGN_BOTTOM_MID, 0);
+    // lv_label_set_text(lbl_hl, "H:0° L:0°");
+}
+
+
 
 static lv_obj_t * slider_label;
 static void slider_event_cb(lv_event_t * e)
@@ -695,6 +826,8 @@ static void create_page_remote(lv_obj_t *parent)
 static void create_page_home(lv_obj_t *parent)
 {
     /* HOME PAGE PANELS */
+    tux_panel_stop_clock(parent);
+    tux_panel_clock_weather2(parent);
     tux_panel_clock_weather(parent);
     //tux_panel_devinfo(parent);  
 }
@@ -982,6 +1115,28 @@ void datetime_event_cb(lv_event_t * e)
         // 12hr clock AM/PM
         strftime(strftime_buf, sizeof(strftime_buf), "%p", dtinfo);
         lv_label_set_text_fmt(lbl_ampm, "%s", strftime_buf);        
+    }
+}
+
+void stopwatch_cb(lv_event_t * e)
+{
+    lv_event_code_t code = lv_event_get_code(e);
+    lv_msg_t * m = lv_event_get_msg(e);
+    
+    // Not necessary but if event target was button or so, then required
+    if (code == LV_EVENT_CLICKED)  
+    {
+        //OpenWeatherMap *e_owm = NULL;
+        //e_owm = (OpenWeatherMap*)lv_msg_get_payload(m);
+        //ESP_LOGW(TAG,"weather_event_cb %s",e_owm->LocationName.c_str());
+
+        // set this according to e_owm->WeatherIcon 
+        //set_weather_icon(e_owm->WeatherIcon);      
+
+        lv_label_set_text(lbl_time2,"1234");
+        ESP_LOGI(TAG, "clicked");
+
+        //lv_label_set_text(lbl_hl,fmt::format("H:{:.1f}° L:{:.1f}°",e_owm->TemperatureHigh,e_owm->TemperatureLow).c_str());
     }
 }
 

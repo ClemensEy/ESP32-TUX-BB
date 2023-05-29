@@ -1,7 +1,7 @@
 menu "ESP32-TUX Configuration"
     menu "Device Config"
 
-    choice TUX_DEVICE_SELECTED
+    choice TUX_DEVICE_WT32_SC01_PLUS
 		default TUX_DEVICE_NONE
         prompt "Select the device"
 		config TUX_DEVICE_NONE
@@ -172,7 +172,7 @@ menu "ESP32-TUX Configuration"
     menu "OTA Config"
         config OTA_FIRMWARE_UPGRADE_URL
             string "Firmware Upgrade URL"
-            default "https://192.168.1.128/build/ESP32-TUX.bin"
+            default "https://192.168.188.34/build/ESP32-TUX.bin"
             help
                 URL of server which hosts the firmware image.
     
@@ -242,7 +242,7 @@ menu "ESP32-TUX Configuration"
                 Register on OpenWeatherMap.org for FREE limited API KEY        
         config WEATHER_LOCAL_URL
             string "Local URL for weather.json for testing"
-            default "192.168.1.128"
+            default "192.168.188.34"
             help
                 URL of server where sample weather.json is available.    
     endmenu
