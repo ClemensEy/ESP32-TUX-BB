@@ -830,9 +830,9 @@ static void create_page_remote(lv_obj_t *parent)
 static void create_page_home(lv_obj_t *parent)
 {
     /* HOME PAGE PANELS */
-    tux_panel_stop_clock(parent);
+    //tux_panel_stop_clock(parent);
     tux_panel_clock_weather2(parent);
-    tux_panel_clock_weather(parent);
+    //tux_panel_clock_weather(parent);
     //tux_panel_devinfo(parent);  
 }
 

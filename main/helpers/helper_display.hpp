@@ -88,7 +88,7 @@ esp_err_t lv_display_init()
     // Setting display to landscape
     // if (lcd.width() < lcd.height()) lcd.setRotation(lcd.getRotation() ^ 2);
 
-    lcd.setRotation(2);
+    lcd.setRotation(1);
     lcd.setColorDepth(16);
     lcd.setBrightness(128);
     //lcd.fillScreen(TFT_BLACK);
@@ -111,8 +111,8 @@ esp_err_t lv_display_init()
     /*** LVGL : Setup & Initialize the display device driver ***/
     static lv_disp_drv_t disp_drv;
     lv_disp_drv_init(&disp_drv);
-    disp_drv.hor_res = screenWidth;
-    disp_drv.ver_res = screenHeight;
+    disp_drv.hor_res = screenHeight;
+    disp_drv.ver_res = screenWidth;
     disp_drv.flush_cb = display_flush;
     disp_drv.draw_buf = &draw_buf;
     disp_drv.sw_rotate = 1;
