@@ -140,13 +140,5 @@ char devinfo_data[300] = {0};   // Device info
 // Weather update timer - Once per min (60*1000) or maybe once in 10 mins (10*60*1000)
 static constexpr int WEATHER_UPDATE_INTERVAL = 60 * 1000;
 
-struct SensorData {
-    tm timestamp;
-    float db_value;
-    //string bb_id;
-    // Add more fields as needed for your specific sensor data
-};
-const int bufferSize = 60; // Assuming one reading per second for simplicity
-SensorData sensorBuffer[bufferSize];
-int bufferIndex;
+
 #endif // TUX_CONF_H

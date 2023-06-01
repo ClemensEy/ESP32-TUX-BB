@@ -9,6 +9,7 @@ cmake_minimum_required(VERSION 3.5)
 # set(SDKCONFIG "${CMAKE_BINARY_DIR}/sdkconfig") 
 
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
+set(EXTRA_COMPONENT_DIRS $ENV{IDF_PATH}/examples/protocols/modbus/mb_example_common)
 
 #LVGL custom config file setup
 idf_build_set_property(COMPILE_OPTIONS "-DLV_CONF_INCLUDE_SIMPLE=1" APPEND)
@@ -18,6 +19,9 @@ idf_build_set_property(COMPILE_OPTIONS "-I../main" APPEND)
 idf_build_set_property(COMPILE_OPTIONS "-Wno-missing-field-initializers" APPEND)
 idf_build_set_property(COMPILE_OPTIONS "-Wno-unused-variable" APPEND)
 idf_build_set_property(COMPILE_OPTIONS "-Wno-unused-function" APPEND)
+
+
+idf_build_set_property(COMPILE_OPTIONS "-Wno-error=format= -Wno-format" APPEND)
 
 # This should be only for .cpp files
 #idf_build_set_property(COMPILE_OPTIONS "-Wdeprecated-enum-enum-conversion" APPEND)

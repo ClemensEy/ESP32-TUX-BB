@@ -1,5 +1,7 @@
 ## IDF Component Manager Manifest File
 dependencies:
+  espressif/esp-modbus:
+    version: "^1.0" 
   espressif/fmt: "^9.1.0"
   ## Required IDF version
   idf:

@@ -189,7 +189,8 @@ static void footer_button_event_handler(lv_event_t *e);
 /* MSG Events */
 void datetime_event_cb(lv_event_t * e);
 void weather_event_cb(lv_event_t * e);
-void temp_event_cb(lv_event_t * e);
+//void temp_event_cb(lv_event_t * e);
+void db_draw_cb(lv_event_t * e);
 void stopwatch_cb(lv_event_t * e);
 
 static void status_change_cb(void * s, lv_msg_t *m);
@@ -197,7 +198,22 @@ static void lv_update_battery(uint batval);
 static void set_weather_icon(string weatherIcon);
 
 static int current_page = 0;
-lv_coord_t ui_Chart2_series_1_array[] = { 0,1,2,3,4,5,6,7,8,9};
+lv_coord_t db_data[60] ;
+static lv_chart_series_t * ser2;
+static int new_x = 0;
+static int counter = 0;
+static int db_index = 30;
+lv_chart_series_t* ui_Chart2_series_1;
+
+struct SensorData {
+    tm timestamp;
+    lv_coord_t db_value;
+    //string bb_id;
+    // Add more fields as needed for your specific sensor data
+};
+const int bufferSize = 60; // Assuming one reading per second for simplicity
+SensorData sensorBuffer[bufferSize];
+int bufferIndex;
 
 void lv_setup_styles()
 {
@@ -764,22 +780,37 @@ static void create_page_chart(lv_obj_t *parent)
 {
  
     ui_Chart2 = lv_chart_create(parent);
-    lv_obj_set_width( ui_Chart2, 475);
+    lv_obj_set_width( ui_Chart2, 470);
     lv_obj_set_height( ui_Chart2, 270);
+    lv_obj_set_x( ui_Chart2, 0 );
+    lv_obj_set_y( ui_Chart2, 0 );
     lv_obj_set_align( ui_Chart2, LV_ALIGN_CENTER );
-    lv_chart_set_type( ui_Chart2, LV_CHART_TYPE_LINE);
-    lv_chart_set_point_count( ui_Chart2, 60);
-    lv_chart_set_div_line_count( ui_Chart2, 0, 20);
+    lv_chart_set_type( ui_Chart2, LV_CHART_TYPE_BAR);
+    lv_chart_set_update_mode(ui_Chart2, LV_CHART_UPDATE_MODE_SHIFT);
+    //lv_obj_set_style_size(ui_Chart2, 20, 40);
+
+    lv_chart_set_point_count( ui_Chart2, 20);
+    lv_chart_set_div_line_count( ui_Chart2, 0, 0);
+    lv_obj_set_style_pad_gap(ui_Chart2, 0, LV_PART_MAIN);
+    lv_obj_set_style_pad_gap(ui_Chart2,0, LV_PART_ITEMS);
     lv_chart_set_axis_tick( ui_Chart2, LV_CHART_AXIS_PRIMARY_X, 10, 5, 0, 0, false, 50);
     lv_chart_set_axis_tick( ui_Chart2, LV_CHART_AXIS_PRIMARY_Y, 0, 5, 0, 0, false, 50);
     lv_chart_set_axis_tick( ui_Chart2, LV_CHART_AXIS_SECONDARY_Y, 10, 5, 0, 0, false, 25);
-    lv_chart_series_t* ui_Chart2_series_1 = lv_chart_add_series(ui_Chart2, lv_color_hex(0x808080), LV_CHART_AXIS_PRIMARY_Y);
-    //static lv_coord_t ui_Chart2_series_1_array[] = { 0,10,20,20,20,20,20,20,20,0 };
-    lv_chart_set_ext_y_array(ui_Chart2, ui_Chart2_series_1, ui_Chart2_series_1_array);
+    ui_Chart2_series_1 = lv_chart_add_series(ui_Chart2, lv_color_hex(0xff8080), LV_CHART_AXIS_PRIMARY_Y);
+    //static lv_coord_t db_data[] = { 0,10,20,20,20,20,20,20,20,0 };
+    lv_chart_set_ext_y_array(ui_Chart2, ui_Chart2_series_1, db_data );
     //get data
-    lv_obj_add_event_cb(parent, temp_event_cb, LV_EVENT_MSG_RECEIVED, NULL);
+    //lv_obj_add_event_cb(parent, temp_event_cb, LV_EVENT_MSG_RECEIVED, NULL);
     lv_msg_subsribe_obj(MSG_TEMP_UPDATE, parent, NULL); 
 
+    lv_obj_add_event_cb(parent, db_draw_cb, LV_EVENT_MSG_RECEIVED, NULL);
+    lv_msg_subsribe_obj(MSG_DRAW_UPDATE, parent, NULL); 
+    
+    /*ser2 = lv_chart_add_series(ui_Chart2, lv_palette_lighten(LV_PALETTE_GREY, 1), LV_CHART_AXIS_PRIMARY_Y);
+    lv_chart_set_next_value(ui_Chart2, ser2, lv_rand(10, 80));
+    lv_chart_set_next_value(ui_Chart2, ser2, lv_rand(10, 80));
+    lv_chart_set_next_value(ui_Chart2, ser2, lv_rand(10, 80));
+*/
 }
 
 static void create_page_settings(lv_obj_t *parent)
@@ -1111,23 +1142,55 @@ void weather_event_cb(lv_event_t * e)
     }
 }
 
-void temp_event_cb(lv_event_t * e)
+// void temp_event_cb(lv_event_t * e)
+// {
+//     lv_event_code_t code = lv_event_get_code(e);
+//     lv_msg_t * m = lv_event_get_msg(e);
+
+//       //  ESP_LOGW(TAG,"jdij");
+//     // Not necessary but if event target was button or so, then required
+//     if (code == LV_EVENT_MSG_RECEIVED)  
+//     {
+//         float tsens_value = *((float*)lv_msg_get_payload(m));
+//         char temp_chip[20];
+//         //lv_label_set_text(lbl_temp2,fmt::format("{:.1f}°C",tsens_value).c_str());
+//         db_data[0] = (((static_cast<lv_coord_t>(tsens_value))-39)*10)+20;
+//         lv_obj_invalidate(ui_Chart2);
+//         lv_task_handler();
+//     }
+// }
+void db_draw_cb(lv_event_t * e)
 {
     lv_event_code_t code = lv_event_get_code(e);
-    lv_msg_t * m = lv_event_get_msg(e);
+    lv_msg_t * m = lv_event_get_msg(e);    
+    unsigned int msg_id = lv_msg_get_id(m);
 
-        ESP_LOGW(TAG,"jdij");
+    
     // Not necessary but if event target was button or so, then required
     if (code == LV_EVENT_MSG_RECEIVED)  
     {
-        float tsens_value = *((float*)lv_msg_get_payload(m));
-        char temp_chip[20];
-        //lv_label_set_text(lbl_temp2,fmt::format("{:.1f}°C",tsens_value).c_str());
-        ui_Chart2_series_1_array[0] = ((static_cast<lv_coord_t>(tsens_value))-39)*10;
-        lv_obj_invalidate(ui_Chart2);
+        if (msg_id == MSG_TEMP_UPDATE) {
 
-        lv_task_handler();
-
+            float tsens_value = *((float*)lv_msg_get_payload(m));
+            char temp_chip[20];
+            
+            db_data[db_index] = (((static_cast<lv_coord_t>(tsens_value))-40)*15);
+            db_index++;
+            lv_chart_set_next_value(ui_Chart2, ui_Chart2_series_1,(((static_cast<lv_coord_t>(tsens_value))-40)*15));
+            sensorBuffer[17].db_value = (((static_cast<lv_coord_t>(tsens_value))-40)*15);
+        }
+        //TODO: use vertival scroll function of st7796s
+        new_x = new_x-1;
+        //lv_obj_set_x( ui_Chart2, new_x );  //scrolling chart
+        counter++; 
+        if (counter == 300)   {
+            counter=0;
+            new_x = 0;
+        }
+        lv_chart_refresh(ui_Chart2);
+        //lv_obj_invalidate(ui_Chart2);
+        //lv_task_handler();
+        
 
     }
 }

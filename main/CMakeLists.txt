@@ -1,3 +1,4 @@
+
 idf_component_register(SRCS "main.cpp" 
 					"widgets/tux_panel.c" 
 					"images/dev_bg.c"
@@ -22,10 +23,10 @@ idf_component_register(SRCS "main.cpp"
 					# "fonts/font_7seg_58.c"
 					"fonts/font_7seg_56.c"
 
-                INCLUDE_DIRS "." "devices" "helpers" "pages" "widgets" "images"
+                INCLUDE_DIRS "." "devices" "helpers" "pages" "widgets" "images" "mb_example_common"
 				REQUIRES json LovyanGFX lvgl fatfs fmt SettingsConfig OpenWeatherMap spi_flash
 				app_update ota esp_event esp_timer esp_wifi wifi_provisioning spiffs esp_partition
-				esp_hw_support
+				esp_hw_support esp-modbus
 				)
 
 spiffs_create_partition_image(storage ${PROJECT_DIR}/fatfs FLASH_IN_PROJECT)

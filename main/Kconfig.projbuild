@@ -31,6 +31,7 @@ menu "ESP32-TUX Configuration"
 
         config TUX_DEVICE_WT32_SC01_PLUS
             bool "Wireless-Tag WT32-SC01-Plus - 8Bit Parallel - 8MB Flash"
+            default y
             help
                 This is the device with 8MB Flash on a WT32-SC01-Plus device.
 
@@ -139,6 +140,47 @@ menu "ESP32-TUX Configuration"
             default "mqtt://mqtt.eclipseprojects.io"
             help
                 URL of the mqtt broker to connect to
+    endmenu
+    menu "MODBUS"
+        config MB_UART_PORT_NUM
+            int "UART port number"
+            range 0 2 if IDF_TARGET_ESP32 || IDF_TARGET_ESP32S3
+            default 2 if IDF_TARGET_ESP32 || IDF_TARGET_ESP32S3
+            range 0 1 if IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32C3
+            default 1 if IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32C3
+            help
+                UART communication port number for Modbus.
+        config MB_UART_BAUD_RATE
+            int "UART communication speed"
+            range 1200 115200
+            default  9600
+            help
+                UART communication speed for Modbus
+        config MB_UART_RXD
+            int
+            prompt "MODBUS UART RXD PIN"
+            default 1
+        config MB_UART_TXD
+            int
+            prompt "MODBUS UART TXD PIN"
+            default 42
+        config MB_UART_RTS
+            int
+            prompt "MODBUS UART RTS PIN"
+            default 2
+        choice MB_COMM_MODE
+            prompt "Modbus communication mode"
+            default MB_COMM_MODE_RTU if CONFIG_FMB_COMM_MODE_RTU_EN
+            help
+                Selection of Modbus communication mode option for Modbus.
+            config MB_COMM_MODE_RTU
+                bool "RTU mode"
+                default y
+            config MB_COMM_MODE_ASCII
+                bool "ASCII mode"
+                default n
+        endchoice
+            
     endmenu
     menu "SNTP Config"
         config TIMEZONE_STRING

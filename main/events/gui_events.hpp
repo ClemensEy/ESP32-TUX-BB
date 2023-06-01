@@ -57,6 +57,7 @@ extern "C" {
 #define MSG_WEATHER_CHANGED     101
 
 #define MSG_TEMP_UPDATE        102
+#define MSG_DRAW_UPDATE         103
 
 
 #ifdef __cplusplus
