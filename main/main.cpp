@@ -92,31 +92,25 @@ static void update_temp_ui()
     //lv_msg_send(MSG_TIME_CHANGED, &datetimeinfo);
     //ESP_LOGI(TAG, "Read temperature");
     float tsens_value;
+    lv_coord_t db_value;
     //string tsens_string;
-    if (count_read_db % 20 == 0) {
-        ESP_ERROR_CHECK(temperature_sensor_get_celsius(temp_sensor, &tsens_value));
-        ESP_ERROR_CHECK(master_init());
-        vTaskDelay(10);
+        //ESP_ERROR_CHECK(temperature_sensor_get_celsius(temp_sensor, &tsens_value));
+        ESP_ERROR_CHECK(master_init()); //
 
-        master_operation_func(NULL);
-        ESP_LOGI(TAG, "Temperature value %.02f ℃", tsens_value);
+        db_value = master_operation_func(NULL);
+        //ESP_LOGI(TAG, "db(A) value %.02d db(A)", db_value);
+        //ESP_LOGI(TAG, "Temperature value %.02f ℃", tsens_value);
         // Store the current reading in the buffer
-        sensorBuffer[bufferIndex].timestamp = datetimeinfo;
-        sensorBuffer[bufferIndex].db_value = tsens_value;
+        //sensorBuffer[bufferIndex].timestamp = datetimeinfo;
+        //sensorBuffer[bufferIndex].db_value = db_value;
         // for (int i = 0;i<bufferIndex;i++) {
         //     ESP_LOGI(TAG, "db %.02f ",  sensorBuffer[i].db_value);
 
         // }
     
         // Increment the buffer index and handle wraparound
-        bufferIndex = (bufferIndex + 1) % bufferSize;
-        lv_msg_send(MSG_TEMP_UPDATE, &tsens_value);
-        count_read_db=0;
-    } else
-    {
-        lv_msg_send(MSG_DRAW_UPDATE, &tsens_value);
-    }
-    count_read_db++;
+        //bufferIndex = (bufferIndex + 1) % bufferSize;
+        lv_msg_send(MSG_TEMP_UPDATE, &db_value);
 }
 
 static const char* get_id_string(esp_event_base_t base, int32_t id) {
@@ -357,7 +351,7 @@ extern "C" void app_main(void)
     lv_print_readme_txt("S:/readme.txt");   // SDCARD
 
     //db stuff
-    bufferIndex = 0;
+    //bufferIndex = 0;
 
 
 
@@ -392,7 +386,7 @@ extern "C" void app_main(void)
 
     // Date/Time update timer - once per sec
     timer_datetime = lv_timer_create(timer_datetime_callback, 1000,  NULL);
-    timer_temp = lv_timer_create(timer_temp_callback, 100,  NULL);
+    timer_temp = lv_timer_create(timer_temp_callback, 800,  NULL);
     //start temp timer
    // lv_timer_ready(timer_temp);   // start timer
     //lv_timer_pause(timer_datetime); // enable only when wifi is connected

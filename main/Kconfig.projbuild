@@ -153,7 +153,7 @@ menu "ESP32-TUX Configuration"
         config MB_UART_BAUD_RATE
             int "UART communication speed"
             range 1200 115200
-            default  9600
+            default  4800
             help
                 UART communication speed for Modbus
         config MB_UART_RXD

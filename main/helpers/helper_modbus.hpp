@@ -97,14 +97,15 @@ static void* master_get_param_data(const mb_parameter_descriptor_t* param_descri
 }
 
 // User operation function to read slave values and check alarm
-static void master_operation_func(void *arg)
+static lv_coord_t master_operation_func(void *arg)
 {
     esp_err_t err = ESP_OK;
     float value = 0;
     bool alarm_state = false;
+    lv_coord_t db_value = 0;
     const mb_parameter_descriptor_t* param_descriptor = NULL;
 
-    ESP_LOGI(TAG, "Start modbus test...");
+    //ESP_LOGI(TAG, "Start modbus test...");
 
     for(uint16_t retry = 0; retry <= MASTER_MAX_RETRY && (!alarm_state); retry++) {
         // Read all found characteristics from slave(s)
@@ -163,17 +164,20 @@ static void master_operation_func(void *arg)
                         *(float*)temp_data_ptr = value;
                         if ((param_descriptor->mb_param_type == MB_PARAM_HOLDING) ||
                             (param_descriptor->mb_param_type == MB_PARAM_INPUT)) {
-                            ESP_LOGI(TAG, "Characteristic #%d %s (%s) value = %f (0x%x) read successful.",
+                            /*ESP_LOGI(TAG, "Characteristic #%d %s (%s) value = %f (0x%x) read successful.",
                                             param_descriptor->cid,
                                             (char*)param_descriptor->param_key,
                                             (char*)param_descriptor->param_units,
                                             value,
-                                            *(uint32_t*)temp_data_ptr);
-                            if (((value > param_descriptor->param_opts.max) ||
-                                (value < param_descriptor->param_opts.min))) {
-                                    alarm_state = true;
-                                    break;
-                            }
+                                            *(uint32_t*)temp_data_ptr);*/
+                            //db_value = *(uint16_t*)temp_data_ptr;
+                            db_value = *(uint16_t*)temp_data_ptr;
+                            //ESP_LOGI(TAG, "volume: %d", db_value); 
+                            // if (((value > param_descriptor->param_opts.max) ||
+                            //     (value < param_descriptor->param_opts.min))) {
+                            //         alarm_state = true;
+                            //         break;
+                            // }
                         } else {
                             uint16_t state = *(uint16_t*)temp_data_ptr;
                             const char* rw_str = (state & param_descriptor->param_opts.opt1) ? "ON" : "OFF";
@@ -202,15 +206,10 @@ static void master_operation_func(void *arg)
         vTaskDelay(UPDATE_CIDS_TIMEOUT_TICS); //
     }
 
-    if (alarm_state) {
-        ESP_LOGI(TAG, "Alarm triggered by cid #%d.",
-                                        param_descriptor->cid);
-    } else {
-        ESP_LOGE(TAG, "Alarm is not triggered after %d retries.",
-                                        MASTER_MAX_RETRY);
-    }
-    ESP_LOGI(TAG, "Destroy master...");
+
+    //ESP_LOGI(TAG, "Destroy master...");
     ESP_ERROR_CHECK(mbc_master_destroy());
+    return db_value;
 }
 
 
@@ -257,7 +256,7 @@ static esp_err_t master_init(void)
     MB_RETURN_ON_FALSE((err == ESP_OK), ESP_ERR_INVALID_STATE, TAG,
                                 "mb controller set descriptor fail, returns(0x%x).",
                                 (uint32_t)err);
-    ESP_LOGI(TAG, "Modbus master stack initialized...");
+    //ESP_LOGI(TAG, "Modbus master stack initialized...");
     return err;
 }
 

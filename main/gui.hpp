@@ -30,6 +30,9 @@ SOFTWARE.
 #include "apps/weather/weathericons.h"
 #include "events/gui_events.hpp"
 #include <esp_partition.h>
+#include <string>
+
+
 
 LV_IMG_DECLARE(dev_bg)
 //LV_IMG_DECLARE(tux_logo)
@@ -111,6 +114,10 @@ static lv_coord_t screen_h;
 static lv_coord_t screen_w;
 
 static lv_obj_t *ui_Chart2;
+static lv_obj_t *ui_Chart_rot;
+static lv_obj_t *ui_Chart_db;
+static lv_obj_t *ui_Chart_gelb;
+static lv_obj_t *ui_Label2;
 
 /******************
  *  LVL STYLES
@@ -198,9 +205,18 @@ static void lv_update_battery(uint batval);
 static void set_weather_icon(string weatherIcon);
 
 static int current_page = 0;
+
+
+lv_chart_series_t* ui_Chart2_series_1;
+lv_chart_series_t* ui_Chart2_series_gruen;
+lv_chart_series_t* ui_Chart2_series_gelb;
+lv_chart_series_t* ui_Chart2_series_rot;
+static int counter = 0;
+
+/*
 lv_coord_t db_data[60] ;
 static lv_chart_series_t * ser2;
-static int new_x = 0;
+//static int new_x = 0;
 static int counter = 0;
 static int db_index = 30;
 lv_chart_series_t* ui_Chart2_series_1;
@@ -214,7 +230,7 @@ struct SensorData {
 const int bufferSize = 60; // Assuming one reading per second for simplicity
 SensorData sensorBuffer[bufferSize];
 int bufferIndex;
-
+*/
 void lv_setup_styles()
 {
     font_symbol = &lv_font_montserrat_14;
@@ -229,6 +245,9 @@ void lv_setup_styles()
 
     /* CONTENT CONTAINER BACKGROUND */
     lv_style_init(&style_content_bg);
+    
+    //style_content_bg.scroll.ver = false;
+
     lv_style_set_bg_opa(&style_content_bg, LV_OPA_50);
     lv_style_set_radius(&style_content_bg, 0);
 
@@ -348,6 +367,7 @@ static void create_header(lv_obj_t *parent)
     lv_obj_set_style_radius(panel_header, 0, 0);
     lv_obj_set_align(panel_header, LV_ALIGN_TOP_MID);
     lv_obj_set_scrollbar_mode(panel_header, LV_SCROLLBAR_MODE_OFF);
+    //lv_obj_set_style_bg_opa(panel_header, LV_OPA_TRANSP, 0);
 
     // HEADER TITLE PANEL
     panel_title = lv_obj_create(panel_header);
@@ -356,7 +376,7 @@ static void create_header(lv_obj_t *parent)
 
     // HEADER TITLE
     label_title = lv_label_create(panel_title);
-    lv_label_set_text(label_title, LV_SYMBOL_HOME " ESP32-TUX");
+    lv_label_set_text(label_title, LV_SYMBOL_HOME " BoothBuddy");
 
     // HEADER STATUS ICON PANEL
     panel_status = lv_obj_create(panel_header);
@@ -779,38 +799,78 @@ static void create_page_home(lv_obj_t *parent)
 static void create_page_chart(lv_obj_t *parent)
 {
  
-    ui_Chart2 = lv_chart_create(parent);
-    lv_obj_set_width( ui_Chart2, 470);
-    lv_obj_set_height( ui_Chart2, 270);
-    lv_obj_set_x( ui_Chart2, 0 );
-    lv_obj_set_y( ui_Chart2, 0 );
-    lv_obj_set_align( ui_Chart2, LV_ALIGN_CENTER );
-    lv_chart_set_type( ui_Chart2, LV_CHART_TYPE_BAR);
-    lv_chart_set_update_mode(ui_Chart2, LV_CHART_UPDATE_MODE_SHIFT);
-    //lv_obj_set_style_size(ui_Chart2, 20, 40);
 
-    lv_chart_set_point_count( ui_Chart2, 20);
-    lv_chart_set_div_line_count( ui_Chart2, 0, 0);
-    lv_obj_set_style_pad_gap(ui_Chart2, 0, LV_PART_MAIN);
-    lv_obj_set_style_pad_gap(ui_Chart2,0, LV_PART_ITEMS);
-    lv_chart_set_axis_tick( ui_Chart2, LV_CHART_AXIS_PRIMARY_X, 10, 5, 0, 0, false, 50);
-    lv_chart_set_axis_tick( ui_Chart2, LV_CHART_AXIS_PRIMARY_Y, 0, 5, 0, 0, false, 50);
-    lv_chart_set_axis_tick( ui_Chart2, LV_CHART_AXIS_SECONDARY_Y, 10, 5, 0, 0, false, 25);
-    ui_Chart2_series_1 = lv_chart_add_series(ui_Chart2, lv_color_hex(0xff8080), LV_CHART_AXIS_PRIMARY_Y);
+
+
+    ui_Chart_db = lv_chart_create(parent);
+    lv_obj_set_width( ui_Chart_db, 500);   //10px rechts und links sind rand? display ist 480px breit
+    lv_obj_set_height( ui_Chart_db, 270);
+    lv_obj_set_style_border_width(ui_Chart_db, 0, 0);
+
+    lv_obj_set_x( ui_Chart_db, 0 );
+    lv_obj_set_y( ui_Chart_db, 0 );
+    lv_obj_set_align( ui_Chart_db, LV_ALIGN_CENTER );
+    lv_chart_set_type( ui_Chart_db, LV_CHART_TYPE_BAR);
+    lv_chart_set_update_mode(ui_Chart_db, LV_CHART_UPDATE_MODE_SHIFT);
+    //lv_obj_set_style_size(ui_Chart_db, 20, 40);
+
+    lv_chart_set_point_count( ui_Chart_db, 480);                                                           //  160 240 480 TODO: automatisch berechnen
+    lv_chart_set_div_line_count( ui_Chart_db, 0, 0);
+    lv_obj_set_style_pad_gap(ui_Chart_db, 0, LV_PART_MAIN);
+    lv_obj_set_style_pad_gap(ui_Chart_db,-1, LV_PART_ITEMS); //this can set the spacing between the series // -3  -2 -1
+    lv_obj_set_style_pad_column(ui_Chart_db, 0, 0);
+    lv_chart_set_axis_tick( ui_Chart_db, LV_CHART_AXIS_PRIMARY_X, 10, 5, 0, 0, false, 50);
+    lv_chart_set_axis_tick( ui_Chart_db, LV_CHART_AXIS_PRIMARY_Y, 0, 5, 0, 0, false, 50);
+    lv_chart_set_axis_tick( ui_Chart_db, LV_CHART_AXIS_SECONDARY_Y, 10, 5, 0, 0, false, 25);
+    lv_chart_set_range(ui_Chart_db,LV_CHART_AXIS_PRIMARY_Y,0,1200);
+
+
+
+    //ui_Chart2_series_1 = lv_chart_add_series(ui_Chart_db, lv_color_hex(0xff8080), LV_CHART_AXIS_PRIMARY_Y);
+    ui_Chart2_series_gruen = lv_chart_add_series(ui_Chart_db, lv_color_hex(0x00ff80), LV_CHART_AXIS_PRIMARY_Y);
+    ui_Chart2_series_gelb = lv_chart_add_series(ui_Chart_db, lv_color_hex(0xffff80), LV_CHART_AXIS_PRIMARY_Y);
+    ui_Chart2_series_rot = lv_chart_add_series(ui_Chart_db, lv_color_hex(0xff0080), LV_CHART_AXIS_PRIMARY_Y);
+
+    ui_Label2 = lv_label_create(parent);
+    lv_obj_set_width( ui_Label2, LV_SIZE_CONTENT);  /// 1
+    lv_obj_set_height( ui_Label2, LV_SIZE_CONTENT);   /// 1
+    lv_obj_set_align( ui_Label2, LV_ALIGN_CENTER );
+    lv_label_set_text(ui_Label2,"no mic");
+    lv_obj_set_style_text_font(ui_Label2, &lv_font_montserrat_48, LV_PART_MAIN| LV_STATE_DEFAULT);
+    lv_obj_set_style_text_color(ui_Label2, lv_color_hex(0xFFFFFF), LV_PART_MAIN | LV_STATE_DEFAULT );
+    lv_obj_set_style_text_opa(ui_Label2, 255, LV_PART_MAIN| LV_STATE_DEFAULT);
+    lv_obj_set_style_text_align(ui_Label2, LV_TEXT_ALIGN_AUTO, LV_PART_MAIN| LV_STATE_DEFAULT);
+    //lv_obj_set_style_text_font(ui_Label2, &lv_font_montserrat_48, LV_PART_MAIN| LV_STATE_DEFAULT);
+    lv_obj_set_style_radius(ui_Label2, 10, LV_PART_MAIN| LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_color(ui_Label2, lv_color_hex(0x434343), LV_PART_MAIN | LV_STATE_DEFAULT );
+    lv_obj_set_style_bg_opa(ui_Label2, 150, LV_PART_MAIN| LV_STATE_DEFAULT);
+
     //static lv_coord_t db_data[] = { 0,10,20,20,20,20,20,20,20,0 };
-    lv_chart_set_ext_y_array(ui_Chart2, ui_Chart2_series_1, db_data );
+    //lv_chart_set_ext_y_array(ui_Chart2, ui_Chart2_series_1, db_data );
     //get data
     //lv_obj_add_event_cb(parent, temp_event_cb, LV_EVENT_MSG_RECEIVED, NULL);
     lv_msg_subsribe_obj(MSG_TEMP_UPDATE, parent, NULL); 
 
     lv_obj_add_event_cb(parent, db_draw_cb, LV_EVENT_MSG_RECEIVED, NULL);
-    lv_msg_subsribe_obj(MSG_DRAW_UPDATE, parent, NULL); 
+    //lv_msg_subsribe_obj(MSG_DRAW_UPDATE, parent, NULL); 
     
     /*ser2 = lv_chart_add_series(ui_Chart2, lv_palette_lighten(LV_PALETTE_GREY, 1), LV_CHART_AXIS_PRIMARY_Y);
     lv_chart_set_next_value(ui_Chart2, ser2, lv_rand(10, 80));
     lv_chart_set_next_value(ui_Chart2, ser2, lv_rand(10, 80));
     lv_chart_set_next_value(ui_Chart2, ser2, lv_rand(10, 80));
 */
+
+    // Adjust the width and spacing of the series to overlap
+    // lv_chart_set_series_width(ui_Chart2_series_1, 8);  // Set the width of each bar in the series
+    // lv_chart_set_series_gap(ui_Chart2_series_1, 2);    // Set the spacing between each bar in the series    // Adjust the width and spacing of the series to overlap
+    // lv_chart_set_series_width(ui_Chart2_series_gruen, 8);  // Set the width of each bar in the series
+    // lv_chart_set_series_gap(ui_Chart2_series_gruen, 2);    // Set the spacing between each bar in the series
+
+   // lv_obj_set_style_line_width(ui_Chart_db, 1, LV_PART_INDICATOR);
+// Adjust the width and spacing of the bars within each series
+    //lv_obj_set_style_pad_right();  // Set negative right padding
+    //lv_obj_set_style_local_pad_inner(ui_Chart_db, LV_CHART_PART_BAR, LV_STATE_DEFAULT, -2);  // Set negative inner padding
+
 }
 
 static void create_page_settings(lv_obj_t *parent)
@@ -855,7 +915,7 @@ static void show_ui()
 
     // HEADER & FOOTER
     create_header(screen_container);
-    create_footer(screen_container);
+    //create_footer(screen_container);
 
     // CONTENT CONTAINER 
     content_container = lv_obj_create(screen_container);
@@ -863,12 +923,15 @@ static void show_ui()
     lv_obj_align(content_container, LV_ALIGN_TOP_MID, 0, HEADER_HEIGHT);
     lv_obj_set_style_border_width(content_container, 0, 0);
     lv_obj_set_style_bg_opa(content_container, LV_OPA_TRANSP, 0);
-
+    lv_obj_set_scrollbar_mode(content_container, LV_SCROLLBAR_MODE_OFF);
+    lv_obj_clear_flag(content_container, LV_OBJ_FLAG_SCROLLABLE);
     //lv_obj_set_flex_flow(content_container, LV_FLEX_FLOW_COLUMN);
 
     // Show Home Page
     //create_page_home(content_container);
     create_page_chart(content_container);
+    //create_header(content_container);
+
     //create_page_settings(content_container);
     //create_page_remote(content_container);
 
@@ -1171,23 +1234,56 @@ void db_draw_cb(lv_event_t * e)
     {
         if (msg_id == MSG_TEMP_UPDATE) {
 
-            float tsens_value = *((float*)lv_msg_get_payload(m));
+            lv_coord_t tsens_value = *((lv_coord_t*)lv_msg_get_payload(m));
             char temp_chip[20];
             
-            db_data[db_index] = (((static_cast<lv_coord_t>(tsens_value))-40)*15);
-            db_index++;
-            lv_chart_set_next_value(ui_Chart2, ui_Chart2_series_1,(((static_cast<lv_coord_t>(tsens_value))-40)*15));
-            sensorBuffer[17].db_value = (((static_cast<lv_coord_t>(tsens_value))-40)*15);
+            //db_data[db_index] = tsens_value;
+            //db_index++;
+            if (tsens_value<590) // 600
+            {
+                lv_chart_set_next_value(ui_Chart_db, ui_Chart2_series_gruen,tsens_value);
+                lv_chart_set_next_value(ui_Chart_db, ui_Chart2_series_gelb,0);
+                lv_chart_set_next_value(ui_Chart_db, ui_Chart2_series_rot,0);
+
+            }
+            else if (tsens_value<680)
+            {
+                lv_chart_set_next_value(ui_Chart_db, ui_Chart2_series_gruen,0);
+                lv_chart_set_next_value(ui_Chart_db, ui_Chart2_series_gelb,tsens_value);
+                lv_chart_set_next_value(ui_Chart_db, ui_Chart2_series_rot,0);
+            }
+            else{
+                lv_chart_set_next_value(ui_Chart_db, ui_Chart2_series_gruen,0);
+                lv_chart_set_next_value(ui_Chart_db, ui_Chart2_series_gelb,0);
+                lv_chart_set_next_value(ui_Chart_db, ui_Chart2_series_rot,tsens_value);
+            }
+            
+            
+            std::string str_number = std::to_string(tsens_value);
+            str_number.insert(str_number.length() - 1, "."); // add a dot 462 -> 46.2
+            lv_label_set_text(ui_Label2,str_number.c_str());
+            //sensorBuffer[17].db_value = tsens_value;
+            ESP_LOGI(TAG,"db: %d",tsens_value);
+
         }
         //TODO: use vertival scroll function of st7796s
-        new_x = new_x-1;
+        //new_x = new_x-1;
         //lv_obj_set_x( ui_Chart2, new_x );  //scrolling chart
         counter++; 
-        if (counter == 300)   {
-            counter=0;
-            new_x = 0;
-        }
-        lv_chart_refresh(ui_Chart2);
+        //if (counter == 300)   {
+         //   counter=0;
+        //    new_x = 0;
+
+        //}
+        ESP_LOGI(TAG,"counter: %d",counter);
+
+        // lv_chart_refresh(ui_Chart2);
+        // ESP_LOGI(TAG,"counter2: %d",counter);
+        // if (counter == 96)
+        // {
+        // ESP_LOGI(TAG,"abwerfen: %d",counter);
+        // }
+        
         //lv_obj_invalidate(ui_Chart2);
         //lv_task_handler();
         
@@ -1303,13 +1399,13 @@ static void status_change_cb(void * s, lv_msg_t *m)
             }
         }
         break;
-        case MSG_BATTERY_STATUS:
+        /*case MSG_BATTERY_STATUS:
         {
             int battery_val = *(int *)lv_msg_get_payload(m);
             //ESP_LOGW(TAG,"[%d] MSG_BATTERY_STATUS %d",msg_id,battery_val);
             lv_update_battery(battery_val);
         }
-        break;
+        break;*/
         case MSG_DEVICE_INFO:
         {
             ESP_LOGW(TAG,"[%d] MSG_DEVICE_INFO",msg_id);
