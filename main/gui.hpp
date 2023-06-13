@@ -1049,7 +1049,7 @@ static void status_clicked_eventhandler(lv_event_t *e)
     // footer_message("Status icons touched but this is a very long message to show scroll animation!");
     //  Clean the content container first
     //lv_obj_clean(content_container);
-    create_page_settings(settings_container);
+    //create_page_settings(settings_container);
     //create_page_remote(content_container);
 }
 
@@ -1322,14 +1322,17 @@ static void footer_button_event_handler(lv_event_t * e)
 
         // HOME
         if (page_id==MSG_PAGE_HOME)  {
+            //lv_timer_pause(timer_temp);
             lv_obj_clean(content_container);
             lv_obj_clean(settings_container);
-            create_page_home(content_container);
+            create_page_chart(content_container);
+            //lv_timer_resume(timer_temp);
             //anim_move_left_x(content_container,screen_w,0,200);
             lv_msg_send(MSG_PAGE_HOME,NULL);
         } 
         // REMOTE
         else if (page_id == MSG_PAGE_REMOTE) {
+            //lv_timer_pause(timer_temp);
             lv_obj_clean(content_container);
             lv_obj_clean(settings_container);
             create_page_remote(content_container);
@@ -1338,6 +1341,7 @@ static void footer_button_event_handler(lv_event_t * e)
         }
         // SETTINGS
         else if (page_id == MSG_PAGE_SETTINGS) {
+            //lv_timer_pause(timer_temp);
             lv_obj_clean(content_container);
             lv_obj_clean(settings_container);
             create_page_settings(settings_container);
@@ -1346,6 +1350,7 @@ static void footer_button_event_handler(lv_event_t * e)
         }
         // OTA UPDATES
         else if (page_id == MSG_PAGE_OTA) {
+            //lv_timer_pause(timer_temp);
             lv_obj_clean(content_container);
             lv_obj_clean(settings_container);
             create_page_updates(content_container);

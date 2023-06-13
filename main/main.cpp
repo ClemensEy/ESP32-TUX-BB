@@ -569,12 +569,15 @@ static void tux_ui_change_cb(void * s, lv_msg_t *m)
         case MSG_PAGE_HOME:
             // Update date/time and current weather
             // Date/time is updated every second anyway
+            lv_timer_resume(timer_temp);
             lv_msg_send(MSG_WEATHER_CHANGED, owm);
             break;
         case MSG_PAGE_REMOTE:
             // Trigger loading buttons data
+            lv_timer_pause(timer_temp);
             break;
         case MSG_PAGE_SETTINGS:
+            lv_timer_pause(timer_temp);
             if (!is_wifi_connected)  {// Provisioning mode
                 lv_msg_send(MSG_WIFI_PROV_MODE, qr_payload);
                 //lv_msg_send(MSG_QRCODE_CHANGED, qr_payload);
@@ -583,10 +586,12 @@ static void tux_ui_change_cb(void * s, lv_msg_t *m)
             }
             break;
         case MSG_PAGE_OTA:
+            lv_timer_pause(timer_temp);
             // Update firmware current version info
             lv_msg_send(MSG_DEVICE_INFO,device_info().c_str());
             break;
         case MSG_OTA_INITIATE:
+            lv_timer_pause(timer_temp);
             // OTA update from button trigger
             xTaskCreate(run_ota_task, "run_ota_task", 1024 * 8, NULL, 5, NULL);
             break;
