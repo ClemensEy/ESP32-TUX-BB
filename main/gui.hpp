@@ -69,6 +69,7 @@ static lv_obj_t *panel_header;
 static lv_obj_t *panel_title;
 static lv_obj_t *panel_status; // Status icons in the header
 static lv_obj_t *content_container;
+static lv_obj_t *settings_container;
 static lv_obj_t *screen_container;
 static lv_obj_t *qr_status_container;
 
@@ -804,7 +805,7 @@ static void create_page_chart(lv_obj_t *parent)
 
     ui_Chart_db = lv_chart_create(parent);
     lv_obj_set_width( ui_Chart_db, 500);   //10px rechts und links sind rand? display ist 480px breit
-    lv_obj_set_height( ui_Chart_db, 270);
+    lv_obj_set_height( ui_Chart_db, 300);
     lv_obj_set_style_border_width(ui_Chart_db, 0, 0);
 
     lv_obj_set_x( ui_Chart_db, 0 );
@@ -827,9 +828,9 @@ static void create_page_chart(lv_obj_t *parent)
 
 
     //ui_Chart2_series_1 = lv_chart_add_series(ui_Chart_db, lv_color_hex(0xff8080), LV_CHART_AXIS_PRIMARY_Y);
-    ui_Chart2_series_gruen = lv_chart_add_series(ui_Chart_db, lv_color_hex(0x00ff80), LV_CHART_AXIS_PRIMARY_Y);
-    ui_Chart2_series_gelb = lv_chart_add_series(ui_Chart_db, lv_color_hex(0xffff80), LV_CHART_AXIS_PRIMARY_Y);
-    ui_Chart2_series_rot = lv_chart_add_series(ui_Chart_db, lv_color_hex(0xff0080), LV_CHART_AXIS_PRIMARY_Y);
+    ui_Chart2_series_gruen = lv_chart_add_series(ui_Chart_db, lv_color_hex(0x587b0d), LV_CHART_AXIS_PRIMARY_Y);
+    ui_Chart2_series_gelb = lv_chart_add_series(ui_Chart_db, lv_color_hex(0xee9b2a), LV_CHART_AXIS_PRIMARY_Y);
+    ui_Chart2_series_rot = lv_chart_add_series(ui_Chart_db, lv_color_hex(0xec270c), LV_CHART_AXIS_PRIMARY_Y);
 
     ui_Label2 = lv_label_create(parent);
     lv_obj_set_width( ui_Label2, LV_SIZE_CONTENT);  /// 1
@@ -915,7 +916,7 @@ static void show_ui()
 
     // HEADER & FOOTER
     create_header(screen_container);
-    //create_footer(screen_container);
+    create_footer(screen_container);
 
     // CONTENT CONTAINER 
     content_container = lv_obj_create(screen_container);
@@ -923,16 +924,30 @@ static void show_ui()
     lv_obj_align(content_container, LV_ALIGN_TOP_MID, 0, HEADER_HEIGHT);
     lv_obj_set_style_border_width(content_container, 0, 0);
     lv_obj_set_style_bg_opa(content_container, LV_OPA_TRANSP, 0);
-    lv_obj_set_scrollbar_mode(content_container, LV_SCROLLBAR_MODE_OFF);
-    lv_obj_clear_flag(content_container, LV_OBJ_FLAG_SCROLLABLE);
+    //lv_obj_set_scrollbar_mode(content_container, LV_SCROLLBAR_MODE_OFF);
+    //lv_obj_clear_flag(content_container, LV_OBJ_FLAG_SCROLLABLE);
     //lv_obj_set_flex_flow(content_container, LV_FLEX_FLOW_COLUMN);
+
+
+    create_page_chart(content_container);
+    // Settings CONTAINER 
+    settings_container = lv_obj_create(screen_container);
+    lv_obj_set_size(settings_container, screen_w, screen_h - HEADER_HEIGHT - FOOTER_HEIGHT);
+    lv_obj_align(settings_container, LV_ALIGN_TOP_MID, 0, HEADER_HEIGHT);
+    lv_obj_set_style_border_width(settings_container, 0, 0);
+    lv_obj_set_style_bg_opa(settings_container, LV_OPA_TRANSP, 0);
+    //lv_obj_set_scrollbar_mode(content_container, LV_SCROLLBAR_MODE_OFF);
+    //lv_obj_clear_flag(content_container, LV_OBJ_FLAG_SCROLLABLE);
+    lv_obj_set_flex_flow(settings_container, LV_FLEX_FLOW_COLUMN);
 
     // Show Home Page
     //create_page_home(content_container);
-    create_page_chart(content_container);
+    
     //create_header(content_container);
+    //lv_obj_clean(content_container);
 
-    //create_page_settings(content_container);
+    //create_page_settings(settings_container);
+    
     //create_page_remote(content_container);
 
     // Load main screen with animation
@@ -1033,8 +1048,8 @@ static void status_clicked_eventhandler(lv_event_t *e)
 {
     // footer_message("Status icons touched but this is a very long message to show scroll animation!");
     //  Clean the content container first
-    lv_obj_clean(content_container);
-    create_page_settings(content_container);
+    //lv_obj_clean(content_container);
+    create_page_settings(settings_container);
     //create_page_remote(content_container);
 }
 
@@ -1263,19 +1278,19 @@ void db_draw_cb(lv_event_t * e)
             str_number.insert(str_number.length() - 1, "."); // add a dot 462 -> 46.2
             lv_label_set_text(ui_Label2,str_number.c_str());
             //sensorBuffer[17].db_value = tsens_value;
-            ESP_LOGI(TAG,"db: %d",tsens_value);
+            //ESP_LOGI(TAG,"db: %d",tsens_value);
 
         }
         //TODO: use vertival scroll function of st7796s
         //new_x = new_x-1;
         //lv_obj_set_x( ui_Chart2, new_x );  //scrolling chart
-        counter++; 
+        //counter++; 
         //if (counter == 300)   {
          //   counter=0;
         //    new_x = 0;
 
         //}
-        ESP_LOGI(TAG,"counter: %d",counter);
+        //ESP_LOGI(TAG,"counter: %d",counter);
 
         // lv_chart_refresh(ui_Chart2);
         // ESP_LOGI(TAG,"counter2: %d",counter);
@@ -1308,29 +1323,33 @@ static void footer_button_event_handler(lv_event_t * e)
         // HOME
         if (page_id==MSG_PAGE_HOME)  {
             lv_obj_clean(content_container);
+            lv_obj_clean(settings_container);
             create_page_home(content_container);
-            anim_move_left_x(content_container,screen_w,0,200);
+            //anim_move_left_x(content_container,screen_w,0,200);
             lv_msg_send(MSG_PAGE_HOME,NULL);
         } 
         // REMOTE
         else if (page_id == MSG_PAGE_REMOTE) {
             lv_obj_clean(content_container);
+            lv_obj_clean(settings_container);
             create_page_remote(content_container);
-            anim_move_left_x(content_container,screen_w,0,200);
+            //anim_move_left_x(content_container,screen_w,0,200);
             lv_msg_send(MSG_PAGE_REMOTE,NULL);
         }
         // SETTINGS
         else if (page_id == MSG_PAGE_SETTINGS) {
             lv_obj_clean(content_container);
-            create_page_settings(content_container);
-            anim_move_left_x(content_container,screen_w,0,200);
+            lv_obj_clean(settings_container);
+            create_page_settings(settings_container);
+            //anim_move_left_x(settings_container,screen_w,0,200);
             lv_msg_send(MSG_PAGE_SETTINGS,NULL);
         }
         // OTA UPDATES
         else if (page_id == MSG_PAGE_OTA) {
             lv_obj_clean(content_container);
+            lv_obj_clean(settings_container);
             create_page_updates(content_container);
-            anim_move_left_x(content_container,screen_w,0,200);
+            //anim_move_left_x(content_container,screen_w,0,200);
             lv_msg_send(MSG_PAGE_OTA,NULL);
         }
     }

@@ -27,8 +27,71 @@ static const char *TAG = "ESP32-TUX";
 #include <iostream>
 #include <string>
 #include <helper_modbus.hpp>
+#include "driver/gpio.h"
+#include <cmath>
+#include <cstdlib>
+//#define GPIO_PIN  GPIO_NUM_11
+#define BUFFER_SIZE 25
+
 
 int count_read_db =0;
+lv_coord_t db_value = 0;
+
+// Sensor reading structure
+typedef struct {
+    // Define your sensor reading data structure here
+    // For example:
+    lv_coord_t value;
+    int square_value;
+    // Add any additional sensor data you need
+} SensorReading;
+
+// Ring buffer structure
+typedef struct {
+    SensorReading buffer[BUFFER_SIZE];
+    int head;
+    int tail;
+    int count;
+    int avg5s;
+} RingBuffer;
+
+RingBuffer ringBuffer ;
+
+// Initialize the ring buffer
+void initRingBuffer(RingBuffer* ringBuffer) {
+    ringBuffer->head = 0;
+    ringBuffer->tail = 0;
+    ringBuffer->count = 0;
+    ringBuffer->avg5s = 0;
+}
+
+double calculateSquareAverage(RingBuffer* ringBuffer) {
+    double sum = 0;
+    int count = ringBuffer->count;
+
+    for (int i = 0; i < count; ++i) {
+        sum += ringBuffer->buffer[i].square_value;
+    }
+
+    return (count > 0) ? (sum / count) : 0.0;
+}
+
+void update_5s_avg(RingBuffer* ringBuffer) {
+    //calculateSquareAverage(ringBuffer)
+    double avg=calculateSquareAverage(ringBuffer);
+    ringBuffer->avg5s = sqrt(avg);
+}
+
+// Add a sensor reading to the ring buffer
+void addToRingBuffer(RingBuffer* ringBuffer, SensorReading reading) {
+    ringBuffer->buffer[ringBuffer->head] = reading;
+    ringBuffer->head = (ringBuffer->head + 1) % BUFFER_SIZE;
+    if (ringBuffer->count < BUFFER_SIZE) {
+        ringBuffer->count++;
+    } else {
+        ringBuffer->tail = (ringBuffer->tail + 1) % BUFFER_SIZE;
+    }
+}
 
 static void set_timezone()
 {
@@ -61,7 +124,7 @@ static void update_datetime_ui()
     lv_msg_send(MSG_TIME_CHANGED, &datetimeinfo);
 }
 // GEt time from internal RTC and update date/time of the clock
-static void update_temp_ui()
+static void update_temp_ui(SensorReading db_value_sensor)
 {
     // If we are on another screen where lbl_time is not valid
     //if (!lv_obj_is_valid(lbl_time)) return;
@@ -91,13 +154,16 @@ static void update_temp_ui()
     // Send update time to UI with payload using lv_msg
     //lv_msg_send(MSG_TIME_CHANGED, &datetimeinfo);
     //ESP_LOGI(TAG, "Read temperature");
-    float tsens_value;
-    lv_coord_t db_value;
+    //float tsens_value;
+    
+    lv_coord_t db_value = db_value_sensor.value;
     //string tsens_string;
         //ESP_ERROR_CHECK(temperature_sensor_get_celsius(temp_sensor, &tsens_value));
-        ESP_ERROR_CHECK(master_init()); //
+        
+        //MODBUS get db
+        //ESP_ERROR_CHECK(master_init()); //
+        //db_value = master_operation_func(NULL);
 
-        db_value = master_operation_func(NULL);
         //ESP_LOGI(TAG, "db(A) value %.02d db(A)", db_value);
         //ESP_LOGI(TAG, "Temperature value %.02f ℃", tsens_value);
         // Store the current reading in the buffer
@@ -107,7 +173,9 @@ static void update_temp_ui()
         //     ESP_LOGI(TAG, "db %.02f ",  sensorBuffer[i].db_value);
 
         // }
-    
+        //db_value = db_value + 1;
+        //addToRingBuffer(ringBuffer, db_value);
+        //ESP_LOGI(TAG, "ringbuffer %.02f", ringBuffer[1]);
         // Increment the buffer index and handle wraparound
         //bufferIndex = (bufferIndex + 1) % bufferSize;
         lv_msg_send(MSG_TEMP_UPDATE, &db_value);
@@ -271,9 +339,18 @@ static void wifi_event_handler(void* arg, esp_event_base_t event_base,
         strcpy(qr_payload,(char*)event_data);   // Add qr payload to the variable
     }
 }
-
+// Function to initialize the GPIO
+// void init_gpio() {
+//     //gpio_pad_select_gpio(GPIO_PIN);
+//     gpio_set_direction(GPIO_PIN, GPIO_MODE_OUTPUT);
+// }
 extern "C" void app_main(void)
 {
+    //init_gpio();
+    // Create and initialize the ring buffer
+    //RingBuffer ringBuffer;
+    initRingBuffer(&ringBuffer);
+
     esp_log_level_set(TAG, ESP_LOG_DEBUG);      // enable DEBUG logs for this App
     //esp_log_level_set("SettingsConfig", ESP_LOG_DEBUG);    
     esp_log_level_set("wifi", ESP_LOG_WARN);    // enable WARN logs from WiFi stack
@@ -386,9 +463,9 @@ extern "C" void app_main(void)
 
     // Date/Time update timer - once per sec
     timer_datetime = lv_timer_create(timer_datetime_callback, 1000,  NULL);
-    timer_temp = lv_timer_create(timer_temp_callback, 800,  NULL);
+    timer_temp = lv_timer_create(timer_temp_callback, 200,  NULL);
     //start temp timer
-   // lv_timer_ready(timer_temp);   // start timer
+    lv_timer_ready(timer_temp);   // start timer
     //lv_timer_pause(timer_datetime); // enable only when wifi is connected
 
     // Weather update timer - Once per min (60*1000) or maybe once in 10 mins (10*60*1000)
@@ -433,12 +510,36 @@ static void timer_datetime_callback(lv_timer_t * timer)
 
 static void timer_temp_callback(lv_timer_t * timer)
 {
-   
-    //lv_msg_send(MSG_BATTERY_STATUS,&battery_value);
-    // ESP_LOGW(TAG,"TEMP-TIMER-------------xXXXXXxxxx");
-    update_temp_ui();
     
+    // Read the sensor
+    SensorReading db_value;
+    lv_coord_t db_chart;
+    
+    #ifdef NO_MIC
+    db_value.value =  std::rand() % 510 + 500; //500 = 50db
 
+    #else
+    //MODBUS get db
+    ESP_ERROR_CHECK(master_init()); //
+    db_value.value = master_operation_func(NULL);
+
+    #endif
+
+    db_value.square_value = db_value.value * db_value.value;
+    //ESP_LOGI(TAG, "db value %d", db_value.value);
+    
+    if (db_value.value > 100)
+    {
+        /* code */
+    
+    
+        addToRingBuffer(&ringBuffer, db_value);
+        update_5s_avg(&ringBuffer);
+        db_chart =  ringBuffer.avg5s;
+        //ESP_LOGI(TAG, "db ringBuffer %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d ", ringBuffer.buffer[0].value,ringBuffer.buffer[1].value,ringBuffer.buffer[2].value,ringBuffer.buffer[3].value,ringBuffer.buffer[4].value,ringBuffer.buffer[5].value,ringBuffer.buffer[6].value,ringBuffer.buffer[7].value,ringBuffer.buffer[8].value,ringBuffer.buffer[9].value,ringBuffer.buffer[10].value,ringBuffer.buffer[11].value,ringBuffer.buffer[12].value,ringBuffer.buffer[13].value,ringBuffer.buffer[14].value,ringBuffer.buffer[15].value,ringBuffer.buffer[16].value,ringBuffer.buffer[17].value,ringBuffer.buffer[18].value,ringBuffer.buffer[19].value,ringBuffer.buffer[20].value,ringBuffer.buffer[21].value,ringBuffer.buffer[22].value,ringBuffer.buffer[23].value,ringBuffer.buffer[24].value);
+        //ESP_LOGI(TAG, "db count: %d average-25: %d ", ringBuffer.count,ringBuffer.avg5s);
+        lv_msg_send(MSG_TEMP_UPDATE, &db_chart);
+    }
 }
 
 static void timer_weather_callback(lv_timer_t * timer)

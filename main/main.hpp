@@ -25,6 +25,11 @@ SOFTWARE.
 #ifndef TUX_CONF_H
 #define TUX_CONF_H
 
+#include <freertos/FreeRTOS.h>
+#include <freertos/task.h>
+
+
+
 #include "esp_log.h"
 #include "esp_vfs_fat.h"
 #include "sdmmc_cmd.h"
@@ -57,6 +62,8 @@ using namespace std ;
 
 // Make SPIFF available to LVGL Filesystem
 #include "helper_lv_fs.hpp"
+
+#define NO_MIC 1
 
 /********************DEVICE SELECTION ******************/
 #if defined(CONFIG_TUX_DEVICE_WT32_SC01)

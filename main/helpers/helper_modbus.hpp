@@ -200,10 +200,10 @@ static lv_coord_t master_operation_func(void *arg)
                                             (char*)esp_err_to_name(err));
                     }
                 }
-                vTaskDelay(POLL_TIMEOUT_TICS); // timeout between polls
+              //  vTaskDelay(POLL_TIMEOUT_TICS); // timeout between polls
             }
         }
-        vTaskDelay(UPDATE_CIDS_TIMEOUT_TICS); //
+      //  vTaskDelay(UPDATE_CIDS_TIMEOUT_TICS); //
     }
 
 
