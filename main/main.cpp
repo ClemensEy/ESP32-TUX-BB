@@ -482,6 +482,7 @@ extern "C" void app_main(void)
     lv_msg_subsribe(MSG_PAGE_OTA, tux_ui_change_cb, NULL);
     lv_msg_subsribe(MSG_OTA_INITIATE, tux_ui_change_cb, NULL);    // Initiate OTA
     // TEMP     SENSOR
+    /*
     ESP_LOGI(TAG, "Install temperature sensor, expected temp ranger range: 10~50 ℃");
     temp_sensor_config = TEMPERATURE_SENSOR_CONFIG_DEFAULT(10, 50);
     ESP_ERROR_CHECK(temperature_sensor_install(&temp_sensor_config, &temp_sensor));
@@ -494,7 +495,7 @@ extern "C" void app_main(void)
         ESP_ERROR_CHECK(temperature_sensor_get_celsius(temp_sensor, &tsens_value));
         ESP_LOGI(TAG, "Temperature value %.02f ℃", tsens_value);
         //vTaskDelay(pdMS_TO_TICKS(1000));
-    
+    */
     
 }
 

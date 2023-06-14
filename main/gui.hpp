@@ -31,7 +31,9 @@ SOFTWARE.
 #include "events/gui_events.hpp"
 #include <esp_partition.h>
 #include <string>
-
+#include "esp_http_client.h"
+#include "esp_wifi.h"
+#include "esp_system.h"
 
 
 LV_IMG_DECLARE(dev_bg)
@@ -183,7 +185,7 @@ static void show_ui();
 
 static const char* get_firmware_version();
 
-static void rotate_event_handler(lv_event_t *e);
+static void test_event_handler(lv_event_t *e);
 static void theme_switch_event_handler(lv_event_t *e);
 static void espwifi_event_handler(lv_event_t* e);
 //static void espble_event_handler(lv_event_t *e);
@@ -232,6 +234,43 @@ const int bufferSize = 60; // Assuming one reading per second for simplicity
 SensorData sensorBuffer[bufferSize];
 int bufferIndex;
 */
+
+
+
+// HTTP POST request body
+const char* post_data = "This is the body of the POST request";
+
+// HTTP POST request handler
+esp_err_t http_event_handler(esp_http_client_event_t *evt) {
+    switch (evt->event_id) {
+        case HTTP_EVENT_ERROR:
+            ESP_LOGI(TAG,"HTTP_EVENT_ERROR\n");
+            break;
+        case HTTP_EVENT_ON_CONNECTED:
+            ESP_LOGI(TAG,"HTTP_EVENT_ON_CONNECTED\n");
+            break;
+        case HTTP_EVENT_HEADER_SENT:
+            ESP_LOGI(TAG,"HTTP_EVENT_HEADER_SENT\n");
+            break;
+        case HTTP_EVENT_ON_HEADER:
+            ESP_LOGI(TAG,"HTTP_EVENT_ON_HEADER, key=%s, value=%s\n", evt->header_key, evt->header_value);
+            break;
+        case HTTP_EVENT_ON_DATA:
+            ESP_LOGI(TAG,"HTTP_EVENT_ON_DATA, len=%d, data:%s\n", evt->data_len, evt->data);
+            break;
+        case HTTP_EVENT_REDIRECT:
+            ESP_LOGI(TAG,"HTTP_EVENT_REDIRECT\n");
+            break;
+        case HTTP_EVENT_ON_FINISH:
+            ESP_LOGI(TAG,"HTTP_EVENT_ON_FINISH\n");
+            break;
+        case HTTP_EVENT_DISCONNECTED:
+            ESP_LOGI(TAG,"HTTP_EVENT_DISCONNECTED\n");
+            break;
+    }
+    return ESP_OK;
+}
+
 void lv_setup_styles()
 {
     font_symbol = &lv_font_montserrat_14;
@@ -634,9 +673,9 @@ static void tux_panel_config(lv_obj_t *parent)
     lv_obj_t *btn2 = lv_btn_create(cont_2);
     lv_obj_align(btn2, LV_ALIGN_CENTER, 0, 0);
     lv_obj_set_size(btn2, LV_SIZE_CONTENT, 30);
-    lv_obj_add_event_cb(btn2, rotate_event_handler, LV_EVENT_ALL, NULL);
+    lv_obj_add_event_cb(btn2, test_event_handler, LV_EVENT_ALL, NULL);
     lv_obj_t *lbl2 = lv_label_create(btn2);
-    lv_label_set_text(lbl2, "Rotate to Landscape");
+    lv_label_set_text(lbl2, "try POST message");
     //lv_obj_center(lbl2);
     lv_obj_align_to(btn2, sw, LV_ALIGN_OUT_BOTTOM_MID, 0, 15);
 }
@@ -966,8 +1005,19 @@ static void show_ui()
     // Send default page load notification => HOME
     lv_msg_send(MSG_PAGE_HOME,NULL);
 }
+void get_mac_address() {
+    uint8_t mac[6];  // Buffer to store the MAC address
 
-static void rotate_event_handler(lv_event_t *e)
+    esp_err_t err = esp_wifi_get_mac(WIFI_IF_AP, mac);
+
+    if (err == ESP_OK) {
+        ESP_LOGI(TAG,"MAC Address: %02x:%02x:%02x:%02x:%02x:%02x\n",
+            mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+    } else {
+        ESP_LOGI(TAG,"Failed to read MAC address: %s\n", esp_err_to_name(err));
+    }
+}
+static void test_event_handler(lv_event_t *e)
 {
     lv_event_code_t code = lv_event_get_code(e);
     lv_obj_t *btn = lv_event_get_target(e);
@@ -975,25 +1025,31 @@ static void rotate_event_handler(lv_event_t *e)
 
     if (code == LV_EVENT_CLICKED)
     {
-        lvgl_acquire();
+    // Get the MAC address
+    get_mac_address();
+       
+    esp_http_client_config_t config = {
+        .url = "http://192.168.188.34:3000/user/",
+        .method = HTTP_METHOD_POST,
+        .event_handler = http_event_handler,
+        //.user_data = NULL
+    };
 
-        if (lv_disp_get_rotation(disp) == LV_DISP_ROT_270)
-            lv_disp_set_rotation(disp, LV_DISP_ROT_NONE);
-        else
-            lv_disp_set_rotation(disp, (lv_disp_rot_t)(lv_disp_get_rotation(disp) + 1));
+    esp_http_client_handle_t client = esp_http_client_init(&config);
 
-        if (LV_HOR_RES > LV_VER_RES)
-            lv_label_set_text(label, "Rotate to Portrait");
-        else
-            lv_label_set_text(label, "Rotate to Landscape");
+    // Set POST data
+    esp_http_client_set_post_field(client, post_data, strlen(post_data));
 
-        lvgl_release();
+    // Perform the HTTP POST request
+    esp_err_t err3 = esp_http_client_perform(client);
+    if (err3 == ESP_OK) {
+        ESP_LOGI(TAG,"HTTP POST request sent successfully\n");
+    } else {
+        ESP_LOGI(TAG,"HTTP POST request failed: %s\n", esp_err_to_name(err3));
+    }
 
-        // Update
-        screen_h = lv_obj_get_height(lv_scr_act());
-        screen_w = lv_obj_get_width(lv_scr_act());
-        lv_obj_set_size(content_container, screen_w, screen_h - HEADER_HEIGHT - FOOTER_HEIGHT);
-
+    // Cleanup
+    esp_http_client_cleanup(client);
         // footer_message("%d,%d",screen_h,screen_w);
     }
 }
